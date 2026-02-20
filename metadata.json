@@ -1,0 +1,8 @@
+{
+  "name": "Reels Creator",
+  "description": "Create stunning reels with Veo. By Seth Anderson.",
+  "requestFramePermissions": [
+    "microphone"
+  ],
+  "prompt": ""
+}
