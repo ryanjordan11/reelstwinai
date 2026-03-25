@@ -5,7 +5,7 @@
 */
 import { motion, AnimatePresence } from 'framer-motion';
 import React, { useState } from 'react';
-import { Clapperboard, Sparkles, ChevronDown, PlayCircle, Video, PenTool, Scan, Image as ImageIcon, Scissors, TrendingUp, X, ArrowRight, CheckCircle } from 'lucide-react';
+import { Clapperboard, Sparkles, ChevronDown, PlayCircle, Video, PenTool, Scan, Image as ImageIcon, Scissors, TrendingUp } from 'lucide-react';
 import CoursePage from './CoursePage';
 import MiniCourse from './MiniCourse';
 

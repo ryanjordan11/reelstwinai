@@ -21,7 +21,7 @@ import ProfilePage from './components/ProfilePage';
 import CoverCreator from './components/CoverCreator';
 import { generateVideo } from './services/geminiService';
 import { AppView, FeedPost, GenerateVideoParams, PostStatus, UserSettings } from './types';
-import { Clapperboard, Settings, GraduationCap, PenTool, LayoutGrid, Home, Flame, Video, Scissors, User, Image as ImageIcon, ArrowLeft } from 'lucide-react';
+import { Clapperboard, Settings, GraduationCap, LayoutGrid, Home, Flame, Scissors, User, Image as ImageIcon, ArrowLeft } from 'lucide-react';
 
 // Type definition for the AI Studio injection
 declare global {
@@ -360,19 +360,19 @@ const App: React.FC = () => {
           case AppView.GALLERY:
               return <GalleryPage posts={feed} />;
           case AppView.SCRIPTS:
-              return <ScriptCreator />;
+              return <ScriptCreator onBack={() => setCurrentView(AppView.FEED)} />;
           case AppView.COURSE:
               return <CoursePage />;
           case AppView.TRENDING:
               return <TrendingPage userSettings={userSettings} onRemixTrend={handleRemixTrend} />;
           case AppView.ANALYZE:
-              return <VideoAnalyzer />;
+              return <VideoAnalyzer onBack={() => setCurrentView(AppView.FEED)} />;
           case AppView.EDITOR:
-              return <StoryboardPage galleryPosts={feed} />;
+              return <StoryboardPage galleryPosts={feed} onBack={() => setCurrentView(AppView.FEED)} />;
           case AppView.PROFILE:
               return <ProfilePage userSettings={userSettings} posts={feed} onUpload={handleManualUpload} onEditProfile={() => setShowSettingsDialog(true)} />;
           case AppView.COVER_CREATOR:
-              return <CoverCreator />;
+              return <CoverCreator onBack={() => setCurrentView(AppView.FEED)} />;
           case AppView.FEED:
           default:
               return (
@@ -419,152 +419,156 @@ const App: React.FC = () => {
         )}
       </AnimatePresence>
       
-      {/* Voice Control Global Component */}
-      <VoiceControl onNavigate={handleVoiceNavigate} />
+      {/* Voice Control Global Component - Hide on creation views */}
+      {![AppView.EDITOR, AppView.SCRIPTS, AppView.COVER_CREATOR, AppView.ANALYZE].includes(currentView) && (
+        <VoiceControl onNavigate={handleVoiceNavigate} />
+      )}
 
       <main className="flex-1 h-full relative overflow-y-auto overflow-x-hidden no-scrollbar bg-black flex flex-col">
         {/* Ambient background light */}
         <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(circle_at_50%_0%,_rgba(255,255,255,0.03),_transparent_70%)]"></div>
 
-        {/* Top Bar */}
-        <header className="sticky top-0 z-30 w-full px-6 py-4 pointer-events-none">
-            {/* Glass background for header */}
-            <div className="absolute inset-0 bg-black/80 backdrop-blur-xl border-b border-white/5" />
-            
-            <div className="relative flex items-center justify-between text-white pointer-events-auto max-w-[1600px] mx-auto w-full">
-                
-                {/* Logo & Brand & Back Button */}
-                <div className="flex items-center gap-4">
-                    {/* Back Button - Only shows when not on FEED */}
-                    {currentView !== AppView.FEED && (
-                        <button 
-                            onClick={() => setCurrentView(AppView.FEED)}
-                            className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition-all border border-white/5 text-white/80 hover:text-white group"
-                            title="Back to Feed"
-                        >
-                            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-0.5 transition-transform" />
-                        </button>
-                    )}
-
-                    <div className="flex items-center gap-3.5 cursor-pointer group" onClick={() => setCurrentView(AppView.FEED)}>
-                        <Clapperboard className="w-7 h-7 text-white group-hover:text-purple-400 transition-colors" />
-                        <div className="flex flex-col">
-                            <h1 className="font-bogle text-2xl text-white tracking-wide uppercase leading-none">Reels Creator</h1>
-                            <span className="text-[10px] text-white/40 tracking-widest hidden md:block">BY SETH ANDERSON</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Navigation - Centered (Desktop) / Hidden Mobile (Can handle mobile responsive differently, but keeping simple for now) */}
-                <nav className="hidden md:flex items-center gap-1 bg-white/5 rounded-full p-1 border border-white/10">
-                    <button 
-                        onClick={() => setCurrentView(AppView.FEED)}
-                        className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${currentView === AppView.FEED ? 'bg-white text-black shadow-md' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
-                    >
-                        Feed
-                    </button>
-                    <button 
-                         onClick={() => setCurrentView(AppView.TRENDING)}
-                         className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${currentView === AppView.TRENDING ? 'bg-white text-black shadow-md' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
-                    >
-                        Trending
-                    </button>
-                    <button 
-                         onClick={() => setCurrentView(AppView.EDITOR)}
-                         className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${currentView === AppView.EDITOR ? 'bg-white text-black shadow-md' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
-                    >
-                        Editor
-                    </button>
-                    <button 
-                         onClick={() => setCurrentView(AppView.COVER_CREATOR)}
-                         className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${currentView === AppView.COVER_CREATOR ? 'bg-white text-black shadow-md' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
-                    >
-                        Covers
-                    </button>
-                    <button 
-                         onClick={() => setCurrentView(AppView.GALLERY)}
-                         className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${currentView === AppView.GALLERY ? 'bg-white text-black shadow-md' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
-                    >
-                        Gallery
-                    </button>
-                    <button 
-                         onClick={() => setCurrentView(AppView.SCRIPTS)}
-                         className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${currentView === AppView.SCRIPTS ? 'bg-white text-black shadow-md' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
-                    >
-                        Scripts
-                    </button>
-                </nav>
-
-                {/* Right Actions */}
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => setCurrentView(AppView.COURSE)}
-                    className="hidden sm:flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-full text-xs font-bold uppercase tracking-wider hover:scale-105 transition-transform shadow-lg shadow-purple-900/20"
-                  >
-                    <GraduationCap className="w-4 h-4" />
-                    Learn More
-                  </button>
+        {/* Top Bar - Hide on creation views to give more space */}
+        {![AppView.EDITOR, AppView.SCRIPTS, AppView.COVER_CREATOR, AppView.ANALYZE].includes(currentView) && (
+          <header className="sticky top-0 z-30 w-full px-6 py-4 pointer-events-none">
+              {/* Glass background for header */}
+              <div className="absolute inset-0 bg-black/80 backdrop-blur-xl border-b border-white/5" />
+              
+              <div className="relative flex items-center justify-between text-white pointer-events-auto max-w-[1600px] mx-auto w-full">
                   
-                   <button 
-                    onClick={() => setCurrentView(AppView.PROFILE)}
-                    className={`p-2 rounded-full transition-colors backdrop-blur-md border border-white/5 group ${currentView === AppView.PROFILE ? 'bg-white text-black' : 'bg-white/10 hover:bg-white/20 text-white/80'}`}
-                    title="Profile"
-                  >
-                    <User className="w-5 h-5 group-hover:scale-105 transition-transform" />
-                  </button>
+                  {/* Logo & Brand & Back Button */}
+                  <div className="flex items-center gap-4">
+                      {/* Back Button - Only shows when not on FEED */}
+                      {currentView !== AppView.FEED && (
+                          <button 
+                              onClick={() => setCurrentView(AppView.FEED)}
+                              className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition-all border border-white/5 text-white/80 hover:text-white group"
+                              title="Back to Feed"
+                          >
+                              <ArrowLeft className="w-5 h-5 group-hover:-translate-x-0.5 transition-transform" />
+                          </button>
+                      )}
 
-                  <button 
-                    onClick={() => setShowSettingsDialog(true)}
-                    className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors backdrop-blur-md border border-white/5 group"
-                    title="Creator Settings"
-                  >
-                    <Settings className="w-5 h-5 text-white/80 group-hover:text-white group-hover:rotate-90 transition-all duration-500" />
-                  </button>
-                </div>
-            </div>
+                      <div className="flex items-center gap-3.5 cursor-pointer group" onClick={() => setCurrentView(AppView.FEED)}>
+                          <Clapperboard className="w-7 h-7 text-white group-hover:text-purple-400 transition-colors" />
+                          <div className="flex flex-col">
+                              <h1 className="font-bogle text-2xl text-white tracking-wide uppercase leading-none">Reels Creator</h1>
+                              <span className="text-[10px] text-white/40 tracking-widest hidden md:block">BY SETH ANDERSON</span>
+                          </div>
+                      </div>
+                  </div>
 
-            {/* Mobile Nav (Simple Bottom Row styled as sub-header for now to ensure visibility) */}
-            <div className="md:hidden flex justify-center mt-3 relative pointer-events-auto">
-                 <nav className="flex items-center gap-1 bg-white/5 rounded-xl p-1 border border-white/10 backdrop-blur-md overflow-x-auto no-scrollbar max-w-full">
-                    <button 
-                        onClick={() => setCurrentView(AppView.FEED)}
-                        className={`p-2 rounded-lg transition-all ${currentView === AppView.FEED ? 'bg-white text-black' : 'text-white/60'}`}
+                  {/* Navigation - Centered (Desktop) / Hidden Mobile (Can handle mobile responsive differently, but keeping simple for now) */}
+                  <nav className="hidden md:flex items-center gap-1 bg-white/5 rounded-full p-1 border border-white/10">
+                      <button 
+                          onClick={() => setCurrentView(AppView.FEED)}
+                          className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${currentView === AppView.FEED ? 'bg-white text-black shadow-md' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
+                      >
+                          Feed
+                      </button>
+                      <button 
+                           onClick={() => setCurrentView(AppView.TRENDING)}
+                           className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${currentView === AppView.TRENDING ? 'bg-white text-black shadow-md' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
+                      >
+                          Trending
+                      </button>
+                      <button 
+                           onClick={() => setCurrentView(AppView.EDITOR)}
+                           className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${currentView === AppView.EDITOR ? 'bg-white text-black shadow-md' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
+                      >
+                          Editor
+                      </button>
+                      <button 
+                           onClick={() => setCurrentView(AppView.COVER_CREATOR)}
+                           className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${currentView === AppView.COVER_CREATOR ? 'bg-white text-black shadow-md' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
+                      >
+                          Covers
+                      </button>
+                      <button 
+                           onClick={() => setCurrentView(AppView.GALLERY)}
+                           className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${currentView === AppView.GALLERY ? 'bg-white text-black shadow-md' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
+                      >
+                          Gallery
+                      </button>
+                      <button 
+                           onClick={() => setCurrentView(AppView.SCRIPTS)}
+                           className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${currentView === AppView.SCRIPTS ? 'bg-white text-black shadow-md' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
+                      >
+                          Scripts
+                      </button>
+                  </nav>
+
+                  {/* Right Actions */}
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setCurrentView(AppView.COURSE)}
+                      className="hidden sm:flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-full text-xs font-bold uppercase tracking-wider hover:scale-105 transition-transform shadow-lg shadow-purple-900/20"
                     >
-                        <Home className="w-4 h-4" />
+                      <GraduationCap className="w-4 h-4" />
+                      Learn More
                     </button>
-                    <button 
-                         onClick={() => setCurrentView(AppView.TRENDING)}
-                         className={`p-2 rounded-lg transition-all ${currentView === AppView.TRENDING ? 'bg-white text-black' : 'text-white/60'}`}
-                    >
-                        <Flame className="w-4 h-4" />
-                    </button>
-                    <button 
-                         onClick={() => setCurrentView(AppView.EDITOR)}
-                         className={`p-2 rounded-lg transition-all ${currentView === AppView.EDITOR ? 'bg-white text-black' : 'text-white/60'}`}
-                    >
-                        <Scissors className="w-4 h-4" />
-                    </button>
-                    <button 
-                         onClick={() => setCurrentView(AppView.COVER_CREATOR)}
-                         className={`p-2 rounded-lg transition-all ${currentView === AppView.COVER_CREATOR ? 'bg-white text-black' : 'text-white/60'}`}
-                    >
-                        <ImageIcon className="w-4 h-4" />
-                    </button>
-                    <button 
-                         onClick={() => setCurrentView(AppView.GALLERY)}
-                         className={`p-2 rounded-lg transition-all ${currentView === AppView.GALLERY ? 'bg-white text-black' : 'text-white/60'}`}
-                    >
-                        <LayoutGrid className="w-4 h-4" />
-                    </button>
+                    
                      <button 
-                         onClick={() => setCurrentView(AppView.PROFILE)}
-                         className={`p-2 rounded-lg transition-all ${currentView === AppView.PROFILE ? 'bg-white text-black' : 'text-white/60'}`}
+                      onClick={() => setCurrentView(AppView.PROFILE)}
+                      className={`p-2 rounded-full transition-colors backdrop-blur-md border border-white/5 group ${currentView === AppView.PROFILE ? 'bg-white text-black' : 'bg-white/10 hover:bg-white/20 text-white/80'}`}
+                      title="Profile"
                     >
-                        <User className="w-4 h-4" />
+                      <User className="w-5 h-5 group-hover:scale-105 transition-transform" />
                     </button>
-                </nav>
-            </div>
-        </header>
+
+                    <button 
+                      onClick={() => setShowSettingsDialog(true)}
+                      className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors backdrop-blur-md border border-white/5 group"
+                      title="Creator Settings"
+                    >
+                      <Settings className="w-5 h-5 text-white/80 group-hover:text-white group-hover:rotate-90 transition-all duration-500" />
+                    </button>
+                  </div>
+              </div>
+
+              {/* Mobile Nav (Simple Bottom Row styled as sub-header for now to ensure visibility) */}
+              <div className="md:hidden flex justify-center mt-3 relative pointer-events-auto">
+                   <nav className="flex items-center gap-1 bg-white/5 rounded-xl p-1 border border-white/10 backdrop-blur-md overflow-x-auto no-scrollbar max-w-full">
+                      <button 
+                          onClick={() => setCurrentView(AppView.FEED)}
+                          className={`p-2 rounded-lg transition-all ${currentView === AppView.FEED ? 'bg-white text-black' : 'text-white/60'}`}
+                      >
+                          <Home className="w-4 h-4" />
+                      </button>
+                      <button 
+                           onClick={() => setCurrentView(AppView.TRENDING)}
+                           className={`p-2 rounded-lg transition-all ${currentView === AppView.TRENDING ? 'bg-white text-black' : 'text-white/60'}`}
+                      >
+                          <Flame className="w-4 h-4" />
+                      </button>
+                      <button 
+                           onClick={() => setCurrentView(AppView.EDITOR)}
+                           className={`p-2 rounded-lg transition-all ${currentView === AppView.EDITOR ? 'bg-white text-black' : 'text-white/60'}`}
+                      >
+                          <Scissors className="w-4 h-4" />
+                      </button>
+                      <button 
+                           onClick={() => setCurrentView(AppView.COVER_CREATOR)}
+                           className={`p-2 rounded-lg transition-all ${currentView === AppView.COVER_CREATOR ? 'bg-white text-black' : 'text-white/60'}`}
+                      >
+                          <ImageIcon className="w-4 h-4" />
+                      </button>
+                      <button 
+                           onClick={() => setCurrentView(AppView.GALLERY)}
+                           className={`p-2 rounded-lg transition-all ${currentView === AppView.GALLERY ? 'bg-white text-black' : 'text-white/60'}`}
+                      >
+                          <LayoutGrid className="w-4 h-4" />
+                      </button>
+                       <button 
+                           onClick={() => setCurrentView(AppView.PROFILE)}
+                           className={`p-2 rounded-lg transition-all ${currentView === AppView.PROFILE ? 'bg-white text-black' : 'text-white/60'}`}
+                      >
+                          <User className="w-4 h-4" />
+                      </button>
+                  </nav>
+              </div>
+          </header>
+        )}
 
         {/* Content Area */}
         {renderView()}

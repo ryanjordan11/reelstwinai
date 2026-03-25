@@ -8,7 +8,7 @@ import {
   VideoGenerationReferenceImage,
   VideoGenerationReferenceType,
 } from '@google/genai';
-import {GenerateVideoParams, GenerationMode, ImageFile, VideoFile} from '../types';
+import {GenerateVideoParams, GenerationMode, VideoFile} from '../types';
 
 // Helper to retrieve API key (User provided > Environment)
 export const getApiKey = (): string | undefined => {
@@ -231,7 +231,8 @@ export const generateVideo = async (
 
   if (operation.error) {
     console.error('Operation failed with error:', operation.error);
-    throw new Error(operation.error.message || 'Video generation failed.');
+    const errorMessage = (operation.error as any).message || 'Video generation failed.';
+    throw new Error(errorMessage);
   }
 
   if (operation.response) {

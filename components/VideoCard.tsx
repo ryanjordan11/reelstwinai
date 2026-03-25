@@ -17,8 +17,7 @@ interface VideoCardProps {
 
 const VideoCard: React.FC<VideoCardProps> = ({ post, onLike, onComment }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [isHovered, setIsHovered] = useState(false);
+  const [, setIsHovered] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [showComments, setShowComments] = useState(false);

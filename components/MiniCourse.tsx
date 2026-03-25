@@ -5,7 +5,7 @@
 */
 import { motion, AnimatePresence } from 'framer-motion';
 import React, { useState } from 'react';
-import { X, ArrowRight, Play, CheckCircle } from 'lucide-react';
+import { X, ArrowRight, CheckCircle } from 'lucide-react';
 
 interface MiniCourseProps {
   onClose: () => void;
@@ -55,7 +55,7 @@ const MiniCourse: React.FC<MiniCourseProps> = ({ onClose }) => {
         <div className="flex h-[500px]">
             {/* Sidebar Progress */}
             <div className="w-1/3 bg-white/5 border-r border-white/5 p-8 flex flex-col justify-center gap-6">
-                {STEPS.map((step, idx) => (
+                {STEPS.map((_step, idx) => (
                     <div key={idx} className={`flex items-center gap-3 transition-colors ${idx === currentStep ? 'text-white' : 'text-white/20'}`}>
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border ${idx === currentStep ? 'bg-white text-black border-white' : idx < currentStep ? 'bg-green-500 border-green-500 text-black' : 'border-white/20'}`}>
                             {idx < currentStep ? <CheckCircle className="w-4 h-4" /> : idx + 1}

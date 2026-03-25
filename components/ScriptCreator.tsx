@@ -4,11 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
 */
 import { motion } from 'framer-motion';
-import { Copy, PenTool, Sparkles, Wand2 } from 'lucide-react';
+import { Copy, PenTool, Sparkles, Wand2, ArrowLeft } from 'lucide-react';
 import React, { useState } from 'react';
 import { generateScript } from '../services/geminiService';
 
-const ScriptCreator: React.FC = () => {
+interface ScriptCreatorProps {
+  onBack: () => void;
+}
+
+const ScriptCreator: React.FC<ScriptCreatorProps> = ({ onBack }) => {
   const [topic, setTopic] = useState('');
   const [script, setScript] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -33,6 +37,17 @@ const ScriptCreator: React.FC = () => {
 
   return (
     <div className="w-full max-w-4xl mx-auto p-6">
+        <div className="flex items-center gap-4 mb-6">
+            <button 
+                onClick={onBack}
+                className="p-2 bg-white/5 hover:bg-white/10 rounded-full transition-all border border-white/5 text-white/60 hover:text-white"
+                title="Back"
+            >
+                <ArrowLeft className="w-5 h-5" />
+            </button>
+            <div className="h-px flex-1 bg-white/10"></div>
+        </div>
+
         <div className="text-center mb-10">
             <h1 className="text-4xl font-bogle text-white mb-2">Viral Script Writer</h1>
             <p className="text-white/50">Turn any idea into a high-retention reel script instantly.</p>

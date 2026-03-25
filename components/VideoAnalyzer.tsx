@@ -4,12 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
 */
 import { motion } from 'framer-motion';
-import { Upload, Film, Sparkles, Check, AlertCircle } from 'lucide-react';
+import { Upload, Film, Sparkles, Check, AlertCircle, ArrowLeft } from 'lucide-react';
 import React, { useState, useRef } from 'react';
 import { analyzeVideo } from '../services/geminiService';
 import { VideoFile } from '../types';
 
-const VideoAnalyzer: React.FC = () => {
+interface VideoAnalyzerProps {
+  onBack: () => void;
+}
+
+const VideoAnalyzer: React.FC<VideoAnalyzerProps> = ({ onBack }) => {
   const [videoFile, setVideoFile] = useState<VideoFile | null>(null);
   const [analysis, setAnalysis] = useState<string>('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -52,6 +56,17 @@ const VideoAnalyzer: React.FC = () => {
 
   return (
     <div className="w-full max-w-5xl mx-auto p-6">
+        <div className="flex items-center gap-4 mb-6">
+            <button 
+                onClick={onBack}
+                className="p-2 bg-white/5 hover:bg-white/10 rounded-full transition-all border border-white/5 text-white/60 hover:text-white"
+                title="Back"
+            >
+                <ArrowLeft className="w-5 h-5" />
+            </button>
+            <div className="h-px flex-1 bg-white/10"></div>
+        </div>
+
         <div className="text-center mb-10">
             <h1 className="text-4xl font-bogle text-white mb-2">Video Understanding</h1>
             <p className="text-white/50">Upload a viral clip to breakdown its format, style, and psychology.</p>

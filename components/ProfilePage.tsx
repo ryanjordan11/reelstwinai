@@ -3,7 +3,7 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
 */
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { Camera, Edit3, Grid, Settings, Upload, Video as VideoIcon } from 'lucide-react';
 import React, { useRef } from 'react';
 import { FeedPost, UserSettings } from '../types';

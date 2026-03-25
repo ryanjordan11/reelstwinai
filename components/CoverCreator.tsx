@@ -3,12 +3,15 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
 */
-import React, { useState, useRef, useEffect } from 'react';
-import { Download, Sparkles, Image as ImageIcon, Type, Wand2 } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Download, Sparkles, Image as ImageIcon, Wand2, ArrowLeft } from 'lucide-react';
 import { generateCoverImage } from '../services/geminiService';
-import { motion } from 'framer-motion';
 
-const CoverCreator: React.FC = () => {
+interface CoverCreatorProps {
+  onBack: () => void;
+}
+
+const CoverCreator: React.FC<CoverCreatorProps> = ({ onBack }) => {
   const [prompt, setPrompt] = useState('');
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -89,6 +92,17 @@ const CoverCreator: React.FC = () => {
 
   return (
     <div className="w-full max-w-6xl mx-auto p-6">
+        <div className="flex items-center gap-4 mb-6">
+            <button 
+                onClick={onBack}
+                className="p-2 bg-white/5 hover:bg-white/10 rounded-full transition-all border border-white/5 text-white/60 hover:text-white"
+                title="Back"
+            >
+                <ArrowLeft className="w-5 h-5" />
+            </button>
+            <div className="h-px flex-1 bg-white/10"></div>
+        </div>
+
         <div className="text-center mb-10">
             <h1 className="text-4xl font-bogle text-white mb-2">Cover Creator</h1>
             <p className="text-white/50">Design viral thumbnails instantly with AI.</p>

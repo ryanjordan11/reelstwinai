@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
 */
 import { motion } from 'framer-motion';
-import { Flame, ArrowUpRight, Wand2, Search } from 'lucide-react';
+import { Flame, ArrowUpRight, Wand2 } from 'lucide-react';
 import React from 'react';
 import { UserSettings } from '../types';
 

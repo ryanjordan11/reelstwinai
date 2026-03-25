@@ -3,7 +3,7 @@
  * @license
  * SPDX-License-Identifier: Apache-2.0
 */
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { GoogleGenAI, LiveServerMessage, Modality, FunctionDeclaration, Type, Blob } from '@google/genai';
 import { Mic, MicOff, Volume2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -96,7 +96,7 @@ const VoiceControl: React.FC<VoiceControlProps> = ({ onNavigate }) => {
           },
           onmessage: async (msg: LiveServerMessage) => {
              // Handle Tool Calls
-             if (msg.toolCall) {
+             if (msg.toolCall && msg.toolCall.functionCalls) {
                 for (const fc of msg.toolCall.functionCalls) {
                     if (fc.name === 'navigate_to_page') {
                         const page = (fc.args as any).page;

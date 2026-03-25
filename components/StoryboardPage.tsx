@@ -4,15 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
 */
 import { AnimatePresence, Reorder, motion } from 'framer-motion';
-import { Film, GripVertical, Play, Plus, Trash2, Type, Pause, X, Download, Share2, Check } from 'lucide-react';
+import { Film, GripVertical, Play, Plus, Trash2, Type, Pause, X, Download, Share2, Check, ArrowLeft } from 'lucide-react';
 import React, { useState, useRef, useEffect } from 'react';
 import { FeedPost, StoryboardClip } from '../types';
 
 interface StoryboardPageProps {
   galleryPosts: FeedPost[];
+  onBack: () => void;
 }
 
-const StoryboardPage: React.FC<StoryboardPageProps> = ({ galleryPosts }) => {
+const StoryboardPage: React.FC<StoryboardPageProps> = ({ galleryPosts, onBack }) => {
   const [clips, setClips] = useState<StoryboardClip[]>([]);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentClipIndex, setCurrentClipIndex] = useState(0);
@@ -183,8 +184,17 @@ const StoryboardPage: React.FC<StoryboardPageProps> = ({ galleryPosts }) => {
           
           {/* Toolbar */}
           <div className="h-14 border-b border-white/10 flex items-center justify-between px-6 bg-[#0a0a0a]">
-              <div className="text-xs text-white/40 font-mono">
-                  {clips.length} Clips • {Math.round(clips.length * 4.5)}s Total Est.
+              <div className="flex items-center gap-4">
+                  <button 
+                    onClick={onBack}
+                    className="p-2 bg-white/5 hover:bg-white/10 rounded-full transition-all border border-white/5 text-white/60 hover:text-white"
+                    title="Back"
+                  >
+                      <ArrowLeft className="w-4 h-4" />
+                  </button>
+                  <div className="text-xs text-white/40 font-mono">
+                      {clips.length} Clips • {Math.round(clips.length * 4.5)}s Total Est.
+                  </div>
               </div>
               
               <div className="relative">

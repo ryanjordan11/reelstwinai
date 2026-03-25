@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
 */
 import { motion } from 'framer-motion';
-import { ArrowRight, Facebook, Mail, PlayCircle, Star, TrendingUp } from 'lucide-react';
+import { Facebook, Mail, PlayCircle, Star, TrendingUp } from 'lucide-react';
 import React from 'react';
 
 const CoursePage: React.FC = () => {
