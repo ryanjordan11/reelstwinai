@@ -115,7 +115,7 @@ const StoryboardPage: React.FC<StoryboardPageProps> = ({ galleryPosts }) => {
   };
 
   return (
-    <div className="flex h-full pb-20 overflow-hidden relative">
+    <div className="flex h-full overflow-hidden relative">
       
       {/* Export Overlay */}
       <AnimatePresence>

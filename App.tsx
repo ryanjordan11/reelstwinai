@@ -571,12 +571,14 @@ const App: React.FC = () => {
 
       </main>
 
-      {/* Hide prompt bar if not in creation capable modes (Course page usually doesn't need prompt bar, but consistent UI is okay. Let's keep it everywhere for easy creation.) */}
-      <BottomPromptBar 
-        onGenerate={handleGenerate} 
-        userSettings={userSettings} 
-        forcedPrompt={forcedPrompt}
-      />
+      {/* Hide prompt bar if in editor or other full-screen creation modes */}
+      {![AppView.EDITOR, AppView.SCRIPTS, AppView.COVER_CREATOR, AppView.ANALYZE].includes(currentView) && (
+        <BottomPromptBar 
+          onGenerate={handleGenerate} 
+          userSettings={userSettings} 
+          forcedPrompt={forcedPrompt}
+        />
+      )}
     </div>
   );
 };

@@ -88,7 +88,7 @@ const CoverCreator: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-6xl mx-auto p-6 pb-32">
+    <div className="w-full max-w-6xl mx-auto p-6">
         <div className="text-center mb-10">
             <h1 className="text-4xl font-bogle text-white mb-2">Cover Creator</h1>
             <p className="text-white/50">Design viral thumbnails instantly with AI.</p>

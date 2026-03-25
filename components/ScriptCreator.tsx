@@ -32,7 +32,7 @@ const ScriptCreator: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-6 pb-32">
+    <div className="w-full max-w-4xl mx-auto p-6">
         <div className="text-center mb-10">
             <h1 className="text-4xl font-bogle text-white mb-2">Viral Script Writer</h1>
             <p className="text-white/50">Turn any idea into a high-retention reel script instantly.</p>
