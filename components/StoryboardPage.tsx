@@ -35,7 +35,7 @@ const StoryboardPage: React.FC<StoryboardPageProps> = ({ galleryPosts, onBack })
 
   const handleAddClip = (post: FeedPost) => {
       const newClip: StoryboardClip = {
-          id: Date.now().toString() + Math.random().toString().slice(2, 6),
+          id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
           sourcePostId: post.id,
       };
       setClips([...clips, newClip]);

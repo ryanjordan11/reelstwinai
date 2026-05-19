@@ -112,7 +112,23 @@ const sampleVideos: FeedPost[] = [
 ];
 
 const App: React.FC = () => {
-  const [feed, setFeed] = useState<FeedPost[]>(sampleVideos);
+  // Load User Generated Posts from localStorage for initial state
+  const getInitialFeed = (): FeedPost[] => {
+    const savedPosts = localStorage.getItem('reelsCreatorUserPosts');
+    if (savedPosts) {
+      try {
+        const parsedPosts = JSON.parse(savedPosts);
+        if (Array.isArray(parsedPosts)) {
+          return [...parsedPosts, ...sampleVideos];
+        }
+      } catch (e) {
+        console.error("Failed to load user posts", e);
+      }
+    }
+    return sampleVideos;
+  };
+
+  const [feed, setFeed] = useState<FeedPost[]>(getInitialFeed);
   const [showApiKeyDialog, setShowApiKeyDialog] = useState(false);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [showLandingPage, setShowLandingPage] = useState(true);
@@ -125,7 +141,7 @@ const App: React.FC = () => {
   // User Profile Settings
   const [userSettings, setUserSettings] = useState<UserSettings | null>(null);
 
-  // Load settings and user posts on mount
+  // Load settings on mount
   useEffect(() => {
     // Load Settings
     const savedSettings = localStorage.getItem('reelsCreatorSettings');
@@ -135,19 +151,6 @@ const App: React.FC = () => {
       } catch (e) {
         console.error("Failed to load settings", e);
       }
-    }
-
-    // Load User Generated Posts
-    const savedPosts = localStorage.getItem('reelsCreatorUserPosts');
-    if (savedPosts) {
-        try {
-            const parsedPosts = JSON.parse(savedPosts);
-            if (Array.isArray(parsedPosts)) {
-                setFeed(prev => [...parsedPosts, ...prev]);
-            }
-        } catch (e) {
-            console.error("Failed to load user posts", e);
-        }
     }
   }, []);
 
@@ -221,9 +224,10 @@ const App: React.FC = () => {
       const username = userSettings?.displayName || "You";
       setFeed(prev => prev.map(p => {
           if (p.id === postId) {
+              const commentId = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
               return {
                   ...p,
-                  comments: [...(p.comments || []), { id: Date.now().toString(), username, text, timestamp: Date.now() }]
+                  comments: [...(p.comments || []), { id: commentId, username, text, timestamp: Date.now() }]
               };
           }
           return p;
@@ -232,8 +236,9 @@ const App: React.FC = () => {
 
   const handleManualUpload = (file: File) => {
       const objectUrl = URL.createObjectURL(file);
+      const newPostId = `upload-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
       const newPost: FeedPost = {
-          id: `upload-${Date.now()}`,
+          id: newPostId,
           videoUrl: objectUrl,
           username: userSettings?.displayName || 'You',
           avatarUrl: userSettings?.avatarBase64 || 'https://api.dicebear.com/7.x/avataaars/svg?seed=you',
@@ -296,7 +301,7 @@ const App: React.FC = () => {
         setCurrentView(AppView.GALLERY);
     }
 
-    const newPostId = Date.now().toString();
+    const newPostId = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
     const refImage = params.referenceImages?.[0]?.base64;
 
     // Use User Settings for profile info if available

@@ -239,7 +239,7 @@ const BottomPromptBar: React.FC<BottomPromptBarProps> = ({ onGenerate, userSetti
         }
         
         const imgFile = await fileToImageFile(file);
-        const newId = `user-${Date.now()}`;
+        const newId = `user-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
         // Create object URL for display. It is tracked in ref for cleanup on unmount.
         const objectUrl = URL.createObjectURL(file);
         uploadedImageUrlsRef.current.push(objectUrl);
