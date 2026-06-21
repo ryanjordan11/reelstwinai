@@ -11,7 +11,7 @@ export enum AppState {
 }
 
 export enum VeoModel {
-  VEO_FAST = 'veo-3.1-fast-generate-preview',
+  VEO_FAST = 'veo-3.1-lite-generate-preview',
   VEO = 'veo-3.1-generate-preview',
 }
 
@@ -104,6 +104,7 @@ export interface UserSettings {
   bio?: string;
   // API Config
   apiKey?: string;
+  apiGatewayUrl?: string;
 }
 
 export enum AppView {

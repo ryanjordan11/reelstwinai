@@ -164,8 +164,8 @@ const App: React.FC = () => {
   // Auto-dismiss error toast
   useEffect(() => {
     if (errorToast) {
-      const timer = setTimeout(() => setErrorToast(null), 5000);
-      return () => clearTimeout(timer);
+       const timer = setTimeout(() => setErrorToast(null), 10000);
+       return () => clearTimeout(timer);
     }
   }, [errorToast]);
 
@@ -264,13 +264,15 @@ const App: React.FC = () => {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error.';
       updateFeedPost(postId, { status: PostStatus.ERROR, errorMessage: errorMessage });
       
-      // Global error toast for specific API key issues
-      if (typeof errorMessage === 'string' && (
-          errorMessage.includes('API_KEY_INVALID') || 
-          errorMessage.includes('permission denied') ||
-          errorMessage.includes('Requested entity was not found')
-      )) {
-        setErrorToast('Invalid API key or permissions. Please check billing.');
+      const lowerMsg = String(errorMessage).toLowerCase();
+      if (lowerMsg.includes('permission_denied') || lowerMsg.includes('permission') || lowerMsg.includes('403')) {
+        setErrorToast('Permission Denied (403). Make sure your key is valid and has Veo permissions, or configure a custom API gateway in Settings!');
+      } else if (lowerMsg.includes('quota') || lowerMsg.includes('limit') || lowerMsg.includes('429') || lowerMsg.includes('resource_exhausted')) {
+        setErrorToast('Quota limits exceeded (429). Check your billing plan, or set up a custom Vercel AI Gateway/API Key inside Settings.');
+      } else if (lowerMsg.includes('api_key_invalid') || lowerMsg.includes('invalid api key')) {
+        setErrorToast('Invalid API key. Please check your key in the settings tab.');
+      } else {
+        setErrorToast(`Generation failed: ${errorMessage.slice(0, 100)}... Check Settings to configure custom API Gateways.`);
       }
     }
   };
@@ -314,7 +316,7 @@ const App: React.FC = () => {
       username: postUsername,
       avatarUrl: postAvatar,
       description: params.prompt,
-      modelTag: params.model === 'veo-3.1-fast-generate-preview' ? 'Veo Fast' : 'Veo',
+      modelTag: params.model === 'veo-3.1-lite-generate-preview' ? 'Veo Fast' : 'Veo',
       status: PostStatus.GENERATING,
       referenceImageBase64: refImage,
       isUserGenerated: true,

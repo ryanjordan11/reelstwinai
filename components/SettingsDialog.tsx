@@ -27,6 +27,7 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ currentSettings, onSave
   
   // API Key Field
   const [apiKey, setApiKey] = useState(currentSettings?.apiKey || '');
+  const [apiGatewayUrl, setApiGatewayUrl] = useState(currentSettings?.apiGatewayUrl || '');
   const [showApiKey, setShowApiKey] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -51,7 +52,8 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ currentSettings, onSave
       niche: niche || 'General',
       tone,
       visualStyle,
-      apiKey: apiKey.trim()
+      apiKey: apiKey.trim(),
+      apiGatewayUrl: apiGatewayUrl.trim()
     });
     onClose();
   };
@@ -105,6 +107,20 @@ const SettingsDialog: React.FC<SettingsDialogProps> = ({ currentSettings, onSave
                 >
                     {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
+            </div>
+
+            <div className="space-y-1.5 mt-4">
+                 <label className="block text-xs font-semibold text-gray-400">Custom API Gateway Base URL (Optional)</label>
+                 <input
+                     type="text"
+                     value={apiGatewayUrl}
+                     onChange={(e) => setApiGatewayUrl(e.target.value)}
+                     placeholder="e.g. https://gateway.ai.vercel.com/v1"
+                     className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-yellow-500/50 transition-colors font-mono text-sm"
+                 />
+                 <p className="text-[11px] text-gray-500 leading-normal">
+                     If you are proxying Google Gemini API through Vercel AI Gateway, Cloudflare Gateway, or similar, paste your base gateway URL here. Leave blank to connect directly.
+                 </p>
             </div>
             
             {!apiKey && (

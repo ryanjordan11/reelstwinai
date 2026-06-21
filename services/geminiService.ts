@@ -26,9 +26,35 @@ export const getApiKey = (): string | undefined => {
   return process.env.API_KEY;
 };
 
-export const generateScript = async (topic: string): Promise<string> => {
+// Helper to retrieve API Gateway Base URL
+export const getApiGatewayUrl = (): string | undefined => {
+  try {
+    const settingsStr = localStorage.getItem('reelsCreatorSettings');
+    if (settingsStr) {
+      const settings = JSON.parse(settingsStr);
+      if (settings.apiGatewayUrl && settings.apiGatewayUrl.trim() !== '') {
+        return settings.apiGatewayUrl.trim();
+      }
+    }
+  } catch (e) {
+    console.error("Error reading settings for API Gateway URL", e);
+  }
+  return undefined;
+};
+
+// Main client factory helper
+export const getApiClient = (): GoogleGenAI => {
   const apiKey = getApiKey();
-  const ai = new GoogleGenAI({apiKey});
+  const baseUrl = getApiGatewayUrl();
+  const options: any = { apiKey };
+  if (baseUrl) {
+    options.httpOptions = { baseUrl };
+  }
+  return new GoogleGenAI(options);
+};
+
+export const generateScript = async (topic: string): Promise<string> => {
+  const ai = getApiClient();
   
   // Using flash-lite for faster text responses as requested
   const response = await ai.models.generateContent({
@@ -48,8 +74,7 @@ export const generateScript = async (topic: string): Promise<string> => {
 };
 
 export const analyzeVideo = async (videoFile: VideoFile): Promise<string> => {
-  const apiKey = getApiKey();
-  const ai = new GoogleGenAI({apiKey});
+  const ai = getApiClient();
 
   console.log("Analyzing video...");
   const response = await ai.models.generateContent({
@@ -74,8 +99,7 @@ export const analyzeVideo = async (videoFile: VideoFile): Promise<string> => {
 
 export const transcribeAudio = async (audioBlob: Blob): Promise<string> => {
   console.log("Transcribing audio...", audioBlob.type);
-  const apiKey = getApiKey();
-  const ai = new GoogleGenAI({ apiKey });
+  const ai = getApiClient();
   
   // Convert blob to base64
   const base64 = await new Promise<string>((resolve, reject) => {
@@ -111,8 +135,7 @@ export const transcribeAudio = async (audioBlob: Blob): Promise<string> => {
 };
 
 export const generateCoverImage = async (prompt: string): Promise<string> => {
-  const apiKey = getApiKey();
-  const ai = new GoogleGenAI({ apiKey });
+  const ai = getApiClient();
   console.log("Generating cover image...", prompt);
   
   const response = await ai.models.generateContent({
@@ -146,7 +169,7 @@ export const generateVideo = async (
   console.log('Starting video generation with params:', params);
 
   const apiKey = getApiKey();
-  const ai = new GoogleGenAI({apiKey});
+  const ai = getApiClient();
 
   const generateVideoPayload: any = {
     model: params.model,
