@@ -185,8 +185,46 @@ const App: React.FC = () => {
      } else {
          savedPosts.unshift(post);
      }
-     // Save back (limit to last 20 to avoid quota issues for this demo)
-     localStorage.setItem('reelsCreatorUserPosts', JSON.stringify(savedPosts.slice(0, 20)));
+     
+     // Save back with robust item-stripping fallback for QuotaExceededError
+     try {
+         localStorage.setItem('reelsCreatorUserPosts', JSON.stringify(savedPosts.slice(0, 10)));
+     } catch (err: any) {
+         console.warn("Storage quota exceeded, trying to save fewer posts and strip heavy base64 assets...", err);
+         try {
+             // 1. Try to save only the 5 most recent posts
+             localStorage.setItem('reelsCreatorUserPosts', JSON.stringify(savedPosts.slice(0, 5)));
+         } catch (err2) {
+             try {
+                 // 2. Try to strip large base64 or videoUrl from older posts, keep them only on the newest post
+                 const skimmedPosts = savedPosts.slice(0, 8).map((p, idx) => {
+                     if (idx > 0) {
+                         // strip large base64/data URLs from older posts to save space
+                         return {
+                             ...p,
+                             videoUrl: p.videoUrl?.startsWith('data:') ? '' : p.videoUrl,
+                             referenceImageBase64: ''
+                         };
+                     }
+                     return p;
+                 });
+                 localStorage.setItem('reelsCreatorUserPosts', JSON.stringify(skimmedPosts));
+             } catch (err3) {
+                 try {
+                     // 3. Keep only the newest post with everything stripped
+                     const singlePostNewest = [savedPosts[0]].map(p => ({
+                         ...p,
+                         videoUrl: p.videoUrl?.startsWith('data:') ? '' : p.videoUrl,
+                         referenceImageBase64: ''
+                     }));
+                     localStorage.setItem('reelsCreatorUserPosts', JSON.stringify(singlePostNewest));
+                 } catch (err4) {
+                     console.error("Local storage is completely full. Gracefully operating in memory mode only.", err4);
+                     setErrorToast("Storage quota reached! Content will be stored in-memory for this session.");
+                 }
+             }
+         }
+     }
   };
 
   const updateFeedPost = (id: string, updates: Partial<FeedPost>) => {

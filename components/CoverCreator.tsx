@@ -17,18 +17,25 @@ const CoverCreator: React.FC<CoverCreatorProps> = ({ onBack }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [overlayText, setOverlayText] = useState('');
   const [textColor, setTextColor] = useState('#ffffff');
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const handleGenerate = async () => {
       if (!prompt.trim()) return;
       setIsGenerating(true);
+      setErrorMsg(null);
       try {
           const base64 = await generateCoverImage(prompt);
           setGeneratedImage(base64);
-      } catch (error) {
+      } catch (error: any) {
           console.error("Cover generation failed", error);
-          alert("Failed to generate cover. Please try again.");
+          const errorText = error instanceof Error ? error.message : String(error);
+          if (errorText.toLowerCase().includes('quota') || errorText.toLowerCase().includes('limit') || errorText.toLowerCase().includes('429') || errorText.toLowerCase().includes('resource_exhausted')) {
+              setErrorMsg("Quota limits exceeded (429) for Gemini! Set up a custom API Key or a Vercel AI Gateway proxy in the Settings menu (⚙️) to continue.");
+          } else {
+              setErrorMsg(`Generation failed: ${errorText.slice(0, 150)}... You can specify a custom API Key or Gateway in Settings.`);
+          }
       } finally {
           setIsGenerating(false);
       }
@@ -122,6 +129,13 @@ const CoverCreator: React.FC<CoverCreatorProps> = ({ onBack }) => {
                         />
                     </div>
                     
+                    {errorMsg && (
+                        <div className="bg-red-500/10 border border-red-500/30 text-red-200 text-xs p-3 rounded-xl leading-normal space-y-1">
+                            <p className="font-semibold text-red-400">Generation Limit Hit</p>
+                            <p>{errorMsg}</p>
+                        </div>
+                    )}
+
                     <button
                         onClick={handleGenerate}
                         disabled={isGenerating || !prompt.trim()}
