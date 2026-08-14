@@ -7,15 +7,16 @@ import { motion, AnimatePresence } from 'framer-motion';
 import React, { useRef, useState } from 'react';
 import { FeedPost, PostStatus } from '../types';
 import { VeoLogo } from './icons';
-import { AlertCircle, Download, Sparkles, Share2, Check, Facebook, Youtube, Instagram, Twitter, Heart, MessageCircle, Send, RefreshCw } from 'lucide-react';
+import { AlertCircle, Download, Sparkles, Share2, Check, Facebook, Youtube, Instagram, Twitter, Heart, MessageCircle, Send, RefreshCw, Trash2 } from 'lucide-react';
 
 interface VideoCardProps {
   post: FeedPost;
   onLike?: (id: string) => void;
   onComment?: (id: string, text: string) => void;
+  onDelete?: (id: string) => void;
 }
 
-const VideoCard: React.FC<VideoCardProps> = ({ post, onLike, onComment }) => {
+const VideoCard: React.FC<VideoCardProps> = ({ post, onLike, onComment, onDelete }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [, setIsHovered] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -351,6 +352,19 @@ const VideoCard: React.FC<VideoCardProps> = ({ post, onLike, onComment }) => {
             >
               <Download className="w-5 h-5" />
             </button>
+
+            {onDelete && (
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(post.id);
+                }}
+                className="p-3 rounded-full bg-red-950/60 border border-red-500/30 backdrop-blur-xl hover:bg-red-700/80 transition-all text-red-200 shadow-[0_4px_12px_rgba(0,0,0,0.3)] group-active:scale-90 hover:scale-105"
+                title="Delete Upload / Creation"
+              >
+                <Trash2 className="w-5 h-5" />
+              </button>
+            )}
           </div>
         )}
       </div>

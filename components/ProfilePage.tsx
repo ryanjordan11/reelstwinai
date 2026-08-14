@@ -14,9 +14,10 @@ interface ProfilePageProps {
   posts: FeedPost[];
   onUpload: (file: File) => void;
   onEditProfile: () => void;
+  onDeletePost?: (postId: string) => void;
 }
 
-const ProfilePage: React.FC<ProfilePageProps> = ({ userSettings, posts, onUpload, onEditProfile }) => {
+const ProfilePage: React.FC<ProfilePageProps> = ({ userSettings, posts, onUpload, onEditProfile, onDeletePost }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Filter for user generated content
@@ -107,7 +108,11 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ userSettings, posts, onUpload
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           <AnimatePresence initial={false}>
             {userPosts.map((post) => (
-              <VideoCard key={post.id} post={post} />
+              <VideoCard 
+                key={post.id} 
+                post={post} 
+                onDelete={onDeletePost ? () => onDeletePost(post.id) : undefined}
+              />
             ))}
           </AnimatePresence>
           {userPosts.length === 0 && (

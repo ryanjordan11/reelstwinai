@@ -1,8 +1,11 @@
 {
   "name": "Reels Creator",
-  "description": "Create stunning reels with Veo. By Seth Anderson.",
+  "description": "Create stunning reels with Veo, custom AI models, API gateways, and personal avatar studio. Made by Ryan Jordan, inspired by Seth Anderson.",
   "requestFramePermissions": [
     "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
   ],
   "prompt": ""
 }

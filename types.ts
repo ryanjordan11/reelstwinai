@@ -44,7 +44,7 @@ export interface VideoFile {
 
 export interface GenerateVideoParams {
   prompt: string;
-  model: VeoModel;
+  model: VeoModel | string;
   aspectRatio: AspectRatio;
   resolution: Resolution;
   mode: GenerationMode;
@@ -54,6 +54,7 @@ export interface GenerateVideoParams {
   styleImage?: ImageFile | null;
   inputVideo?: VideoFile | null;
   isLooping?: boolean;
+  customModelId?: string;
 }
 
 export enum PostStatus {
@@ -75,6 +76,7 @@ export interface FeedPost {
   username: string;
   avatarUrl: string;
   description: string;
+  prompt?: string;
   modelTag: string;
   status?: PostStatus; // If undefined, implies legacy/sample success
   errorMessage?: string;
@@ -92,7 +94,31 @@ export interface CameoProfile {
   id: string;
   name: string;
   imageUrl: string; // In a real app, this would be a URL. For this demo, we'll use base64 placeholders.
+  personaId?: string;
 }
+
+export interface AvatarPersona {
+  id: string;
+  name: string;
+  tagline?: string;
+  avatarBase64: string;
+  style: string;
+  genderOrArchetype?: string;
+  prompt?: string;
+  bio?: string;
+  createdAt: number;
+  isActive?: boolean;
+  isRealSelf?: boolean; // Flag for real user photo upload vs synthesized AI character
+  realPhotos?: string[]; // Multiple real selfies/angles uploaded
+  voiceSettings?: {
+    voiceName?: string;
+    pitch?: number;
+    rate?: number;
+    elevenLabsVoiceId?: string;
+  };
+}
+
+export type ApiProviderType = 'google' | 'vercel' | 'openrouter' | 'aihubmix' | 'replicate' | 'custom';
 
 export interface UserSettings {
   displayName: string;
@@ -103,25 +129,78 @@ export interface UserSettings {
   visualStyle?: string;
   bio?: string;
   // API Config
+  apiProvider?: ApiProviderType;
   apiKey?: string;
   apiGatewayUrl?: string;
+  customTextModel?: string;
+  customImageModel?: string;
+  customVideoModel?: string;
+  replicateApiKey?: string;
+  elevenLabsApiKey?: string;
+  elevenLabsVoiceId?: string;
+  activeAvatarId?: string;
 }
 
 export enum AppView {
   FEED = 'feed',
+  COMPOSER = 'composer', // Dedicated Canvas Studio
+  EDITOR = 'editor',     // Multi-Scene Storyboard & Timeline
+  AVATAR_CREATOR = 'avatar_creator',
   GALLERY = 'gallery',
   SCRIPTS = 'scripts',
+  COVER_CREATOR = 'cover_creator',
   COURSE = 'course',
   TRENDING = 'trending',
   ANALYZE = 'analyze',
-  EDITOR = 'editor',
   PROFILE = 'profile',
-  COVER_CREATOR = 'cover_creator',
+}
+
+export type FeedMode = 'grid' | 'single';
+
+export type TransitionType = 
+  | 'none' 
+  | 'fade' 
+  | 'crossfade' 
+  | 'dip-to-black' 
+  | 'dip-to-white' 
+  | 'slide-left' 
+  | 'slide-right' 
+  | 'wipe' 
+  | 'zoom' 
+  | 'zoom-in' 
+  | 'zoom-out' 
+  | 'glitch' 
+  | 'blur' 
+  | 'cut';
+
+export interface CaptionWord {
+  word: string;
+  start: number; // seconds
+  end: number;   // seconds
+}
+
+export interface CaptionStyle {
+  font: 'impact' | 'sans' | 'serif' | 'bebas' | 'mono';
+  color: string;
+  highlightColor: string;
+  bgBox: boolean;
+  animation: 'karaoke' | 'pop' | 'typewriter' | 'glow';
+  position: 'bottom' | 'center' | 'top';
+  size: number;
 }
 
 export interface StoryboardClip {
   id: string;
   sourcePostId: string;
+  duration?: number; // duration in seconds
+  transition?: TransitionType;
+  transitionDurationSec?: number;
+  scriptNarration?: string;
+  captionText?: string;
+  captionStyle?: CaptionStyle;
+  audioNarrationText?: string;
+  audioNarrationUrl?: string;
+  voiceName?: string;
   textOverlay?: {
     content: string;
     position: 'top' | 'center' | 'bottom';
@@ -131,7 +210,19 @@ export interface StoryboardClip {
 
 export interface Preset {
   id: string;
+  category?: 'camera' | 'style' | 'lighting' | 'angle' | 'general' | 'mood' | string;
   label: string;
   promptSuffix: string;
   icon?: string;
+  description?: string;
+}
+
+export interface PromptHistoryItem {
+  id: string;
+  prompt: string;
+  model: string;
+  aspectRatio: AspectRatio;
+  timestamp: number;
+  cameoName?: string;
+  isFavorite?: boolean;
 }

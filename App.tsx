@@ -1,4 +1,3 @@
-
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -8,6 +7,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 import ApiKeyDialog from './components/ApiKeyDialog';
 import BottomPromptBar from './components/BottomPromptBar';
 import VideoCard from './components/VideoCard';
+import SingleFeed from './components/SingleFeed';
+import Sidebar from './components/Sidebar';
 import LandingPage from './components/LandingPage';
 import SettingsDialog from './components/SettingsDialog';
 import CoursePage from './components/CoursePage';
@@ -19,9 +20,19 @@ import VoiceControl from './components/VoiceControl';
 import StoryboardPage from './components/StoryboardPage';
 import ProfilePage from './components/ProfilePage';
 import CoverCreator from './components/CoverCreator';
+import AvatarCreator from './components/AvatarCreator';
+import ComposerCanvas from './components/ComposerCanvas';
 import { generateVideo } from './services/geminiService';
-import { AppView, FeedPost, GenerateVideoParams, PostStatus, UserSettings } from './types';
-import { Clapperboard, Settings, GraduationCap, LayoutGrid, Home, Flame, Scissors, User, Image as ImageIcon, ArrowLeft } from 'lucide-react';
+import { AppView, FeedMode, FeedPost, GenerateVideoParams, PostStatus, UserSettings } from './types';
+import { 
+  Settings, 
+  LayoutGrid, 
+  User, 
+  ArrowLeft, 
+  Menu, 
+  Sparkles,
+  Smartphone
+} from 'lucide-react';
 
 // Type definition for the AI Studio injection
 declare global {
@@ -42,7 +53,8 @@ const sampleVideos: FeedPost[] = [
     videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-girl-in-neon-sign-1232-large.mp4',
     username: 'alisa_fortin',
     avatarUrl: 'https://api.dicebear.com/9.x/fun-emoji/svg?seed=Maria',
-    description: 'Sipping coffee at a cyberpunk cafe',
+    description: 'Sipping coffee at a cyberpunk cafe with holographic rain',
+    prompt: 'Cinematic cyberpunk cafe in Neo Tokyo, neon reflections in puddle, 4k photorealistic',
     modelTag: 'Veo Fast',
     status: PostStatus.SUCCESS,
     likes: 124,
@@ -54,7 +66,8 @@ const sampleVideos: FeedPost[] = [
     videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-dog-catching-a-ball-1225-large.mp4',
     username: 'osanseviero',
     avatarUrl: 'https://api.dicebear.com/9.x/fun-emoji/svg?seed=Emery',
-    description: 'At a llama petting zoo',
+    description: 'Playful golden retriever catching a glowing neon disc at sunset',
+    prompt: 'Slow motion golden retriever jumping to catch a glowing disc in golden hour park',
     modelTag: 'Veo Fast',
     status: PostStatus.SUCCESS,
     likes: 89,
@@ -66,43 +79,47 @@ const sampleVideos: FeedPost[] = [
     videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-hands-holding-a-smart-phone-with-a-green-screen-1153-large.mp4',
     username: 'ammaar',
     avatarUrl: 'https://api.dicebear.com/9.x/fun-emoji/svg?seed=Kimberly',
-    description: 'At a red carpet ceremony',
+    description: 'Futuristic AI hologram smartphone interface hovering over hands',
+    prompt: 'Futuristic smartphone with 3D holographic interface projection, sci-fi luxury',
     modelTag: 'Veo',
     status: PostStatus.SUCCESS,
     likes: 450,
     hasLiked: false,
     comments: []
   },
-    {
+  {
     id: 's4',
     videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-aerial-view-of-a-beautiful-forest-1186-large.mp4',
     username: 'OfficialLoganK',
     avatarUrl: 'https://api.dicebear.com/9.x/fun-emoji/svg?seed=Jocelyn',
-    description: 'Vibe coding on a mountain.',
+    description: 'FPV drone dive through misty mountain pine forests at sunrise',
+    prompt: 'FPV high speed drone footage diving through evergreen mountain fog, cinematic lighting',
     modelTag: 'Veo Fast',
     status: PostStatus.SUCCESS,
     likes: 210,
     hasLiked: false,
     comments: []
   },
-    {
+  {
     id: 's5',
     videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-tree-branches-in-the-breeze-1188-large.mp4',
     username: 'kat_kampf',
     avatarUrl: 'https://api.dicebear.com/9.x/fun-emoji/svg?seed=Jameson',
-    description: 'Exploring a majestic temple in a forest.',
+    description: 'Ancient mystical bamboo temple garden swaying in gentle wind',
+    prompt: 'Ancient zen temple with swaying cherry blossoms and soft volumetric sunlight',
     modelTag: 'Veo Fast',
     status: PostStatus.SUCCESS,
     likes: 330,
     hasLiked: false,
     comments: []
   },
-    {
+  {
     id: 's6',
     videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-concert-lights-2276-large.mp4',
     username: 'joshwoodward',
     avatarUrl: 'https://api.dicebear.com/9.x/fun-emoji/svg?seed=Jade',
-    description: 'On the Google Keynote stage.',
+    description: 'Epic stadium EDM concert with lasers, pyro, and massive crowd energy',
+    prompt: 'Stadium concert stage with strobe lights, lasers, pyro, energetic audience',
     modelTag: 'Veo Fast',
     status: PostStatus.SUCCESS,
     likes: 560,
@@ -135,7 +152,14 @@ const App: React.FC = () => {
   const [errorToast, setErrorToast] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState<AppView>(AppView.FEED);
   
-  // Prompt state management to allow Trending page to set it
+  // Feed Display Mode: 'grid' (multi-column) or 'single' (TikTok-style vertical reel)
+  const [feedMode, setFeedMode] = useState<FeedMode>('grid');
+
+  // Sidebar collapsed / mobile drawer states
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  
+  // Prompt state management to allow Trending / SingleFeed to set it
   const [forcedPrompt, setForcedPrompt] = useState<string | undefined>(undefined);
   
   // User Profile Settings
@@ -143,7 +167,6 @@ const App: React.FC = () => {
 
   // Load settings on mount
   useEffect(() => {
-    // Load Settings
     const savedSettings = localStorage.getItem('reelsCreatorSettings');
     if (savedSettings) {
       try {
@@ -152,6 +175,11 @@ const App: React.FC = () => {
         console.error("Failed to load settings", e);
       }
     }
+
+    const savedFeedMode = localStorage.getItem('reelsCreatorFeedMode');
+    if (savedFeedMode === 'grid' || savedFeedMode === 'single') {
+      setFeedMode(savedFeedMode as FeedMode);
+    }
   }, []);
 
   // Save settings handler
@@ -159,6 +187,11 @@ const App: React.FC = () => {
     setUserSettings(settings);
     localStorage.setItem('reelsCreatorSettings', JSON.stringify(settings));
     setShowSettingsDialog(false);
+  };
+
+  const handleToggleFeedMode = (mode: FeedMode) => {
+    setFeedMode(mode);
+    localStorage.setItem('reelsCreatorFeedMode', mode);
   };
 
   // Auto-dismiss error toast
@@ -170,7 +203,6 @@ const App: React.FC = () => {
   }, [errorToast]);
 
   const saveUserPost = (post: FeedPost) => {
-     // Get existing
      const savedPostsStr = localStorage.getItem('reelsCreatorUserPosts');
      let savedPosts: FeedPost[] = [];
      if (savedPostsStr) {
@@ -178,7 +210,6 @@ const App: React.FC = () => {
              savedPosts = JSON.parse(savedPostsStr);
          } catch (e) { console.error(e); }
      }
-     // Add new or update
      const index = savedPosts.findIndex(p => p.id === post.id);
      if (index >= 0) {
          savedPosts[index] = post;
@@ -186,20 +217,16 @@ const App: React.FC = () => {
          savedPosts.unshift(post);
      }
      
-     // Save back with robust item-stripping fallback for QuotaExceededError
      try {
          localStorage.setItem('reelsCreatorUserPosts', JSON.stringify(savedPosts.slice(0, 10)));
      } catch (err: any) {
-         console.warn("Storage quota exceeded, trying to save fewer posts and strip heavy base64 assets...", err);
+         console.warn("Storage quota exceeded, stripping heavy base64 assets...", err);
          try {
-             // 1. Try to save only the 5 most recent posts
              localStorage.setItem('reelsCreatorUserPosts', JSON.stringify(savedPosts.slice(0, 5)));
          } catch (err2) {
              try {
-                 // 2. Try to strip large base64 or videoUrl from older posts, keep them only on the newest post
                  const skimmedPosts = savedPosts.slice(0, 8).map((p, idx) => {
                      if (idx > 0) {
-                         // strip large base64/data URLs from older posts to save space
                          return {
                              ...p,
                              videoUrl: p.videoUrl?.startsWith('data:') ? '' : p.videoUrl,
@@ -210,18 +237,8 @@ const App: React.FC = () => {
                  });
                  localStorage.setItem('reelsCreatorUserPosts', JSON.stringify(skimmedPosts));
              } catch (err3) {
-                 try {
-                     // 3. Keep only the newest post with everything stripped
-                     const singlePostNewest = [savedPosts[0]].map(p => ({
-                         ...p,
-                         videoUrl: p.videoUrl?.startsWith('data:') ? '' : p.videoUrl,
-                         referenceImageBase64: ''
-                     }));
-                     localStorage.setItem('reelsCreatorUserPosts', JSON.stringify(singlePostNewest));
-                 } catch (err4) {
-                     console.error("Local storage is completely full. Gracefully operating in memory mode only.", err4);
-                     setErrorToast("Storage quota reached! Content will be stored in-memory for this session.");
-                 }
+                 console.error("Storage full. Using in-memory mode for this session.", err3);
+                 setErrorToast("Storage quota reached! Content will be stored in-memory for this session.");
              }
          }
      }
@@ -232,7 +249,6 @@ const App: React.FC = () => {
       const newFeed = prevFeed.map(post => {
         if (post.id === id) {
             const updatedPost = { ...post, ...updates };
-            // If it's a user generated post, save it to local storage
             if (updatedPost.isUserGenerated) {
                 saveUserPost(updatedPost);
             }
@@ -316,11 +332,8 @@ const App: React.FC = () => {
   };
 
   const handleGenerate = useCallback(async (params: GenerateVideoParams) => {
-    // Check if user has a custom key set (prioritize this over window.aistudio)
     const hasCustomKey = userSettings?.apiKey && userSettings.apiKey.trim().length > 0;
 
-    // API Key Check - deferred until generation attempt
-    // Only force aistudio key selection if NO custom key is provided
     if (!hasCustomKey && window.aistudio) {
       try {
         if (!(await window.aistudio.hasSelectedApiKey())) {
@@ -333,10 +346,8 @@ const App: React.FC = () => {
       }
     }
     
-    // Clear forced prompt after use
     setForcedPrompt(undefined);
 
-    // Automatically switch to Gallery to show progress if we are in course or scripts page
     if (currentView === AppView.COURSE || currentView === AppView.SCRIPTS || currentView === AppView.TRENDING || currentView === AppView.ANALYZE) {
         setCurrentView(AppView.GALLERY);
     }
@@ -344,11 +355,9 @@ const App: React.FC = () => {
     const newPostId = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
     const refImage = params.referenceImages?.[0]?.base64;
 
-    // Use User Settings for profile info if available
     const postUsername = userSettings?.displayName || 'you';
     const postAvatar = userSettings?.avatarBase64 || 'https://api.dicebear.com/7.x/avataaars/svg?seed=you';
 
-    // Create new post object with GENERATING status
     const newPost: FeedPost = {
       id: newPostId,
       username: postUsername,
@@ -364,13 +373,8 @@ const App: React.FC = () => {
       comments: []
     };
 
-    // Save initial state so it appears in gallery immediately
     saveUserPost(newPost);
-
-    // Prepend to feed immediately
     setFeed(prev => [newPost, ...prev]);
-
-    // Start generation in background
     processGeneration(newPostId, params);
 
   }, [userSettings, currentView]);
@@ -383,27 +387,75 @@ const App: React.FC = () => {
   };
 
   const handleRemixTrend = (prompt: string) => {
-    // Switch to Home view and populate prompt bar
-    setCurrentView(AppView.FEED); // Or stay on Trending? Better to go to Feed/Creation context.
-    // We need a way to pass this prompt to the BottomPromptBar.
-    // We will use a state variable for this.
     setForcedPrompt(prompt);
+    setCurrentView(AppView.COMPOSER);
   };
   
-  // Voice Navigation Callback
   const handleVoiceNavigate = (view: AppView) => {
       setCurrentView(view);
   };
 
-  // If we are showing the landing page
+  const handleDeletePost = (postId: string) => {
+    setFeed(prevFeed => {
+      const updated = prevFeed.filter(p => p.id !== postId);
+      const userOnly = updated.filter(p => p.isUserGenerated);
+      try {
+        localStorage.setItem('reelsCreatorUserPosts', JSON.stringify(userOnly));
+      } catch (e) {
+        console.error("Failed to update user posts in storage", e);
+      }
+      return updated;
+    });
+  };
+
+  // If showing landing page
   if (showLandingPage) {
     return <LandingPage onEnter={() => setShowLandingPage(false)} />;
   }
 
+  // Get current view human-readable title
+  const getViewTitle = () => {
+    switch (currentView) {
+      case AppView.COMPOSER:
+        return 'Canvas Composer Studio';
+      case AppView.AVATAR_CREATOR:
+        return 'Real Self & AI Avatar Studio';
+      case AppView.EDITOR:
+        return 'Multi-Scene Storyboard Editor';
+      case AppView.TRENDING:
+        return 'Viral Trending Topics';
+      case AppView.COVER_CREATOR:
+        return 'Thumbnail & Cover Creator';
+      case AppView.GALLERY:
+        return 'Creation Gallery & Assets';
+      case AppView.SCRIPTS:
+        return 'Viral Script & Hook AI';
+      case AppView.ANALYZE:
+        return 'Video Prompt Analyzer';
+      case AppView.COURSE:
+        return 'AI Masterclass & Lessons';
+      case AppView.PROFILE:
+        return 'Creator Profile & Uploads';
+      case AppView.FEED:
+      default:
+        return 'Explore Video Reels';
+    }
+  };
+
   const renderView = () => {
       switch(currentView) {
+          case AppView.COMPOSER:
+              return (
+                <ComposerCanvas 
+                  userSettings={userSettings}
+                  onGenerate={handleGenerate}
+                  latestPost={feed.find(p => p.isUserGenerated && p.status === PostStatus.SUCCESS) || feed[0]}
+                  onSendToEditor={() => setCurrentView(AppView.EDITOR)}
+                  onOpenAvatarStudio={() => setCurrentView(AppView.AVATAR_CREATOR)}
+                />
+              );
           case AppView.GALLERY:
-              return <GalleryPage posts={feed} />;
+              return <GalleryPage posts={feed} onDeletePost={handleDeletePost} />;
           case AppView.SCRIPTS:
               return <ScriptCreator onBack={() => setCurrentView(AppView.FEED)} />;
           case AppView.COURSE:
@@ -413,19 +465,67 @@ const App: React.FC = () => {
           case AppView.ANALYZE:
               return <VideoAnalyzer onBack={() => setCurrentView(AppView.FEED)} />;
           case AppView.EDITOR:
-              return <StoryboardPage galleryPosts={feed} onBack={() => setCurrentView(AppView.FEED)} />;
+              return <StoryboardPage galleryPosts={feed} onBack={() => setCurrentView(AppView.FEED)} onDeletePost={handleDeletePost} />;
           case AppView.PROFILE:
-              return <ProfilePage userSettings={userSettings} posts={feed} onUpload={handleManualUpload} onEditProfile={() => setShowSettingsDialog(true)} />;
+              return (
+                <ProfilePage 
+                  userSettings={userSettings} 
+                  posts={feed} 
+                  onUpload={handleManualUpload} 
+                  onEditProfile={() => setShowSettingsDialog(true)} 
+                  onDeletePost={handleDeletePost}
+                />
+              );
           case AppView.COVER_CREATOR:
               return <CoverCreator onBack={() => setCurrentView(AppView.FEED)} />;
+          case AppView.AVATAR_CREATOR:
+              return (
+                <AvatarCreator 
+                  userSettings={userSettings}
+                  onBack={() => setCurrentView(AppView.FEED)}
+                  onSelectAvatarForReel={(avatar) => {
+                    if (userSettings) {
+                      const updatedSettings: UserSettings = {
+                        ...userSettings,
+                        activeAvatarId: avatar.id,
+                        avatarBase64: avatar.avatarBase64
+                      };
+                      handleSaveSettings(updatedSettings);
+                    }
+                    setCurrentView(AppView.COMPOSER);
+                  }}
+                  onUpdateUserSettings={(newSettings) => {
+                    handleSaveSettings(newSettings);
+                  }}
+                />
+              );
           case AppView.FEED:
           default:
+              if (feedMode === 'single') {
+                return (
+                  <SingleFeed 
+                    posts={feed}
+                    onLike={handleLike}
+                    onComment={handleComment}
+                    onRemixPrompt={handleRemixTrend}
+                    onDeletePost={handleDeletePost}
+                    onOpenAvatarStudio={() => setCurrentView(AppView.AVATAR_CREATOR)}
+                  />
+                );
+              }
+
               return (
                 <div className="w-full max-w-[1600px] mx-auto p-4 md:p-6 pb-48 relative z-10">
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
                         <AnimatePresence initial={false}>
                         {feed.map((post) => (
-                            <VideoCard key={post.id} post={post} onLike={handleLike} onComment={handleComment} />
+                            <VideoCard 
+                              key={post.id} 
+                              post={post} 
+                              onLike={handleLike} 
+                              onComment={handleComment} 
+                              onDelete={post.isUserGenerated ? handleDeletePost : undefined}
+                            />
                         ))}
                         </AnimatePresence>
                     </div>
@@ -435,7 +535,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="h-screen w-screen bg-black text-white flex flex-col overflow-hidden font-sans selection:bg-white/20 selection:text-white">
+    <div className="h-screen w-screen bg-black text-white flex overflow-hidden font-sans selection:bg-purple-500/30 selection:text-white">
       {showApiKeyDialog && (
         <ApiKeyDialog onContinue={handleApiKeyDialogContinue} />
       )}
@@ -456,7 +556,7 @@ const App: React.FC = () => {
                 animate={{ opacity: 1, y: 24, scale: 1 }}
                 exit={{ opacity: 0, y: -20, scale: 0.95 }}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                className="fixed top-0 left-1/2 -translate-x-1/2 z-[60] bg-neutral-900/80 border border-white/10 text-white px-5 py-3 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-xl max-w-md text-center text-sm font-medium flex items-center gap-3"
+                className="fixed top-0 left-1/2 -translate-x-1/2 z-[60] bg-neutral-900/90 border border-white/15 text-white px-5 py-3 rounded-2xl shadow-2xl backdrop-blur-xl max-w-md text-center text-sm font-medium flex items-center gap-3"
             >
                 <div className="w-2 h-2 rounded-full bg-red-500 shrink-0 animate-pulse"></div>
                 {errorToast}
@@ -465,169 +565,156 @@ const App: React.FC = () => {
       </AnimatePresence>
       
       {/* Voice Control Global Component - Hide on creation views */}
-      {![AppView.EDITOR, AppView.SCRIPTS, AppView.COVER_CREATOR, AppView.ANALYZE].includes(currentView) && (
+      {![AppView.EDITOR, AppView.SCRIPTS, AppView.COVER_CREATOR, AppView.ANALYZE, AppView.AVATAR_CREATOR].includes(currentView) && (
         <VoiceControl onNavigate={handleVoiceNavigate} />
       )}
 
-      <main className="flex-1 h-full relative overflow-y-auto overflow-x-hidden no-scrollbar bg-black flex flex-col">
-        {/* Ambient background light */}
-        <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(circle_at_50%_0%,_rgba(255,255,255,0.03),_transparent_70%)]"></div>
+      {/* LEFT SIDEBAR NAVIGATION */}
+      <Sidebar 
+        currentView={currentView}
+        onSelectView={(view) => setCurrentView(view)}
+        onOpenSettings={() => setShowSettingsDialog(true)}
+        userSettings={userSettings}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+        isMobileOpen={isMobileSidebarOpen}
+        onCloseMobile={() => setIsMobileSidebarOpen(false)}
+      />
 
-        {/* Top Bar - Hide on creation views to give more space */}
-        {![AppView.EDITOR, AppView.SCRIPTS, AppView.COVER_CREATOR, AppView.ANALYZE].includes(currentView) && (
-          <header className="sticky top-0 z-30 w-full px-6 py-4 pointer-events-none">
-              {/* Glass background for header */}
-              <div className="absolute inset-0 bg-black/80 backdrop-blur-xl border-b border-white/5" />
-              
-              <div className="relative flex items-center justify-between text-white pointer-events-auto max-w-[1600px] mx-auto w-full">
-                  
-                  {/* Logo & Brand & Back Button */}
-                  <div className="flex items-center gap-4">
-                      {/* Back Button - Only shows when not on FEED */}
-                      {currentView !== AppView.FEED && (
-                          <button 
-                              onClick={() => setCurrentView(AppView.FEED)}
-                              className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition-all border border-white/5 text-white/80 hover:text-white group"
-                              title="Back to Feed"
-                          >
-                              <ArrowLeft className="w-5 h-5 group-hover:-translate-x-0.5 transition-transform" />
-                          </button>
-                      )}
+      {/* MAIN WORKSPACE AREA */}
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-black relative">
+        
+        {/* Ambient background lighting */}
+        <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(circle_at_50%_0%,_rgba(147,51,234,0.04),_transparent_70%)]"></div>
 
-                      <div className="flex items-center gap-3.5 cursor-pointer group" onClick={() => setCurrentView(AppView.FEED)}>
-                          <Clapperboard className="w-7 h-7 text-white group-hover:text-purple-400 transition-colors" />
-                          <div className="flex flex-col">
-                              <h1 className="font-bogle text-2xl text-white tracking-wide uppercase leading-none">Reels Creator</h1>
-                              <span className="text-[10px] text-white/40 tracking-widest hidden md:block">BY SETH ANDERSON</span>
-                          </div>
-                      </div>
-                  </div>
+        {/* CLEAN, MINIMALIST TOP BAR */}
+        <header className="sticky top-0 z-30 w-full px-4 md:px-6 py-3 border-b border-white/10 bg-black/85 backdrop-blur-xl flex items-center justify-between shrink-0">
+          
+          {/* Left Title & Mobile Hamburger */}
+          <div className="flex items-center gap-3">
+            {/* Mobile Hamburger Toggle */}
+            <button
+              onClick={() => setIsMobileSidebarOpen(true)}
+              className="lg:hidden p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white/80"
+              title="Open Navigation Menu"
+            >
+              <Menu className="w-4 h-4" />
+            </button>
 
-                  {/* Navigation - Centered (Desktop) / Hidden Mobile (Can handle mobile responsive differently, but keeping simple for now) */}
-                  <nav className="hidden md:flex items-center gap-1 bg-white/5 rounded-full p-1 border border-white/10">
-                      <button 
-                          onClick={() => setCurrentView(AppView.FEED)}
-                          className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${currentView === AppView.FEED ? 'bg-white text-black shadow-md' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
-                      >
-                          Feed
-                      </button>
-                      <button 
-                           onClick={() => setCurrentView(AppView.TRENDING)}
-                           className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${currentView === AppView.TRENDING ? 'bg-white text-black shadow-md' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
-                      >
-                          Trending
-                      </button>
-                      <button 
-                           onClick={() => setCurrentView(AppView.EDITOR)}
-                           className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${currentView === AppView.EDITOR ? 'bg-white text-black shadow-md' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
-                      >
-                          Editor
-                      </button>
-                      <button 
-                           onClick={() => setCurrentView(AppView.COVER_CREATOR)}
-                           className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${currentView === AppView.COVER_CREATOR ? 'bg-white text-black shadow-md' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
-                      >
-                          Covers
-                      </button>
-                      <button 
-                           onClick={() => setCurrentView(AppView.GALLERY)}
-                           className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${currentView === AppView.GALLERY ? 'bg-white text-black shadow-md' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
-                      >
-                          Gallery
-                      </button>
-                      <button 
-                           onClick={() => setCurrentView(AppView.SCRIPTS)}
-                           className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${currentView === AppView.SCRIPTS ? 'bg-white text-black shadow-md' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
-                      >
-                          Scripts
-                      </button>
-                  </nav>
+            {/* Back to Feed button when not on FEED */}
+            {currentView !== AppView.FEED && (
+              <button 
+                onClick={() => setCurrentView(AppView.FEED)}
+                className="p-2 bg-white/5 hover:bg-white/10 rounded-full transition-all border border-white/10 text-white/70 hover:text-white group"
+                title="Back to Feed"
+              >
+                <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
+              </button>
+            )}
 
-                  {/* Right Actions */}
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => setCurrentView(AppView.COURSE)}
-                      className="hidden sm:flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-full text-xs font-bold uppercase tracking-wider hover:scale-105 transition-transform shadow-lg shadow-purple-900/20"
-                    >
-                      <GraduationCap className="w-4 h-4" />
-                      Learn More
-                    </button>
-                    
-                     <button 
-                      onClick={() => setCurrentView(AppView.PROFILE)}
-                      className={`p-2 rounded-full transition-colors backdrop-blur-md border border-white/5 group ${currentView === AppView.PROFILE ? 'bg-white text-black' : 'bg-white/10 hover:bg-white/20 text-white/80'}`}
-                      title="Profile"
-                    >
-                      <User className="w-5 h-5 group-hover:scale-105 transition-transform" />
-                    </button>
+            <div>
+              <h2 className="text-sm md:text-base font-bold text-white tracking-wide">
+                {getViewTitle()}
+              </h2>
+              {currentView === AppView.FEED && (
+                <p className="text-[10px] text-white/40 font-medium hidden sm:block">
+                  Discover trending AI video reels, prompts, and cinematic shots
+                </p>
+              )}
+            </div>
+          </div>
 
-                    <button 
-                      onClick={() => setShowSettingsDialog(true)}
-                      className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors backdrop-blur-md border border-white/5 group"
-                      title="Creator Settings"
-                    >
-                      <Settings className="w-5 h-5 text-white/80 group-hover:text-white group-hover:rotate-90 transition-all duration-500" />
-                    </button>
-                  </div>
+          {/* Center / Right: FEED MODE TOGGLE (Full Grid vs Single Reel TikTok) */}
+          <div className="flex items-center gap-3">
+            {currentView === AppView.FEED && (
+              <div className="flex items-center p-1 bg-neutral-900/90 border border-white/15 rounded-2xl shadow-inner">
+                <button
+                  type="button"
+                  onClick={() => handleToggleFeedMode('grid')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                    feedMode === 'grid'
+                      ? 'bg-white text-black shadow-md font-bold'
+                      : 'text-white/60 hover:text-white'
+                  }`}
+                  title="Grid Feed (Multi-Card View)"
+                >
+                  <LayoutGrid className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Grid Feed</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleToggleFeedMode('single')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                    feedMode === 'single'
+                      ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md font-bold shadow-purple-900/30'
+                      : 'text-white/60 hover:text-white'
+                  }`}
+                  title="Single Reel (TikTok / Reels Immersive View)"
+                >
+                  <Smartphone className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Single Reel</span>
+                  <span className="text-[9px] px-1 py-0.2 rounded bg-pink-500/20 text-pink-300 font-bold border border-pink-500/30 hidden md:inline">
+                    TikTok
+                  </span>
+                </button>
               </div>
+            )}
 
-              {/* Mobile Nav (Simple Bottom Row styled as sub-header for now to ensure visibility) */}
-              <div className="md:hidden flex justify-center mt-3 relative pointer-events-auto">
-                   <nav className="flex items-center gap-1 bg-white/5 rounded-xl p-1 border border-white/10 backdrop-blur-md overflow-x-auto no-scrollbar max-w-full">
-                      <button 
-                          onClick={() => setCurrentView(AppView.FEED)}
-                          className={`p-2 rounded-lg transition-all ${currentView === AppView.FEED ? 'bg-white text-black' : 'text-white/60'}`}
-                      >
-                          <Home className="w-4 h-4" />
-                      </button>
-                      <button 
-                           onClick={() => setCurrentView(AppView.TRENDING)}
-                           className={`p-2 rounded-lg transition-all ${currentView === AppView.TRENDING ? 'bg-white text-black' : 'text-white/60'}`}
-                      >
-                          <Flame className="w-4 h-4" />
-                      </button>
-                      <button 
-                           onClick={() => setCurrentView(AppView.EDITOR)}
-                           className={`p-2 rounded-lg transition-all ${currentView === AppView.EDITOR ? 'bg-white text-black' : 'text-white/60'}`}
-                      >
-                          <Scissors className="w-4 h-4" />
-                      </button>
-                      <button 
-                           onClick={() => setCurrentView(AppView.COVER_CREATOR)}
-                           className={`p-2 rounded-lg transition-all ${currentView === AppView.COVER_CREATOR ? 'bg-white text-black' : 'text-white/60'}`}
-                      >
-                          <ImageIcon className="w-4 h-4" />
-                      </button>
-                      <button 
-                           onClick={() => setCurrentView(AppView.GALLERY)}
-                           className={`p-2 rounded-lg transition-all ${currentView === AppView.GALLERY ? 'bg-white text-black' : 'text-white/60'}`}
-                      >
-                          <LayoutGrid className="w-4 h-4" />
-                      </button>
-                       <button 
-                           onClick={() => setCurrentView(AppView.PROFILE)}
-                           className={`p-2 rounded-lg transition-all ${currentView === AppView.PROFILE ? 'bg-white text-black' : 'text-white/60'}`}
-                      >
-                          <User className="w-4 h-4" />
-                      </button>
-                  </nav>
-              </div>
-          </header>
+            {/* Quick Canvas Composer Shortcut on Feed */}
+            {currentView === AppView.FEED && (
+              <button
+                onClick={() => setCurrentView(AppView.COMPOSER)}
+                className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-600/30 to-indigo-600/30 hover:from-purple-600/50 hover:to-indigo-600/50 border border-purple-400/40 rounded-xl text-xs font-bold text-purple-200 transition-all shadow-sm"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-purple-300" />
+                <span>Open Canvas</span>
+              </button>
+            )}
+
+            {/* Profile & Settings Buttons */}
+            <div className="flex items-center gap-1.5">
+              <button 
+                onClick={() => setCurrentView(AppView.PROFILE)}
+                className={`p-2 rounded-xl transition-colors border ${
+                  currentView === AppView.PROFILE 
+                    ? 'bg-white text-black border-white' 
+                    : 'bg-white/5 hover:bg-white/10 text-white/80 border-white/10'
+                }`}
+                title="Profile & Uploads"
+              >
+                <User className="w-4 h-4" />
+              </button>
+
+              <button 
+                onClick={() => setShowSettingsDialog(true)}
+                className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-colors border border-white/10 text-white/80 hover:text-white group"
+                title="Settings (API Keys, Audio, Models)"
+              >
+                <Settings className="w-4 h-4 group-hover:rotate-45 transition-transform" />
+              </button>
+            </div>
+
+          </div>
+
+        </header>
+
+        {/* Scrollable Viewport Content */}
+        <main className="flex-1 h-full relative overflow-y-auto overflow-x-hidden no-scrollbar bg-black flex flex-col">
+          {renderView()}
+        </main>
+
+        {/* Show bottom prompt bar on GRID FEED view */}
+        {currentView === AppView.FEED && feedMode === 'grid' && (
+          <BottomPromptBar 
+            onGenerate={handleGenerate} 
+            userSettings={userSettings} 
+            forcedPrompt={forcedPrompt}
+            onOpenAvatarStudio={() => setCurrentView(AppView.AVATAR_CREATOR)}
+          />
         )}
 
-        {/* Content Area */}
-        {renderView()}
-
-      </main>
-
-      {/* Hide prompt bar if in editor or other full-screen creation modes */}
-      {![AppView.EDITOR, AppView.SCRIPTS, AppView.COVER_CREATOR, AppView.ANALYZE].includes(currentView) && (
-        <BottomPromptBar 
-          onGenerate={handleGenerate} 
-          userSettings={userSettings} 
-          forcedPrompt={forcedPrompt}
-        />
-      )}
+      </div>
     </div>
   );
 };
