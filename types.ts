@@ -118,7 +118,79 @@ export interface AvatarPersona {
   };
 }
 
-export type ApiProviderType = 'google' | 'vercel' | 'openrouter' | 'aihubmix' | 'replicate' | 'custom';
+export type ApiProviderType = 
+  | 'google' 
+  | 'ollama' 
+  | 'openrouter' 
+  | 'openai_compatible' 
+  | 'aihubmix' 
+  | 'vercel' 
+  | 'replicate' 
+  | 'custom';
+
+export type AiCapability = 
+  | 'text.generate'
+  | 'image.generate'
+  | 'video.generate'
+  | 'voice.synthesize'
+  | 'voice.transcribe'
+  | 'vision.analyze'
+  | 'trends.search'
+  | 'publish.social';
+
+export interface CapabilityDescriptor {
+  id: AiCapability;
+  name: string;
+  description: string;
+  defaultProvider: ApiProviderType;
+  availableProviders: ApiProviderType[];
+}
+
+export interface ProviderConfig {
+  id: ApiProviderType;
+  name: string;
+  baseUrl: string;
+  apiKey?: string;
+  isLocal: boolean;
+  supportedCapabilities: AiCapability[];
+  discoveredModels?: string[];
+  lastPingStatus?: 'online' | 'offline' | 'untested';
+  lastPingTime?: number;
+}
+
+export interface LocalActivityLog {
+  id: string;
+  timestamp: number;
+  capability: AiCapability;
+  provider: ApiProviderType;
+  model: string;
+  endpoint: string;
+  executionType: 'local' | 'remote';
+  payloadSummary: string;
+  payloadSizeBytes: number;
+  durationMs: number;
+  status: 'success' | 'error' | 'in_flight';
+  storageLocation: string;
+  telemetrySent: string; // strictly "0 bytes • None"
+  error?: string;
+}
+
+export interface LocalProject {
+  id: string;
+  title: string;
+  description?: string;
+  aspectRatio: AspectRatio;
+  fps: number;
+  createdAt: number;
+  updatedAt: number;
+  version: number;
+  schemaVersion: string; // e.g. "1.0.0"
+  clips: StoryboardClip[];
+  scriptText?: string;
+  avatarId?: string;
+  tags?: string[];
+  settingsSnapshot?: Partial<UserSettings>;
+}
 
 export interface UserSettings {
   displayName: string;
@@ -128,17 +200,27 @@ export interface UserSettings {
   tone?: string;
   visualStyle?: string;
   bio?: string;
-  // API Config
+  // API & Provider Config
   apiProvider?: ApiProviderType;
   apiKey?: string;
   apiGatewayUrl?: string;
+  // Ollama & Local inference
+  ollamaUrl?: string;
+  ollamaModel?: string;
+  // Custom Models
   customTextModel?: string;
   customImageModel?: string;
   customVideoModel?: string;
+  // Capability Provider Mappings
+  capabilityMappings?: Partial<Record<AiCapability, ApiProviderType>>;
+  // Other provider keys
   replicateApiKey?: string;
   elevenLabsApiKey?: string;
   elevenLabsVoiceId?: string;
   activeAvatarId?: string;
+  // Privacy & Local storage settings
+  zeroTelemetryVerified?: boolean;
+  localMaxStorageMb?: number;
 }
 
 export enum AppView {
@@ -149,7 +231,6 @@ export enum AppView {
   GALLERY = 'gallery',
   SCRIPTS = 'scripts',
   COVER_CREATOR = 'cover_creator',
-  COURSE = 'course',
   TRENDING = 'trending',
   ANALYZE = 'analyze',
   PROFILE = 'profile',

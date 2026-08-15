@@ -275,21 +275,26 @@ const StoryboardPage: React.FC<StoryboardPageProps> = ({ galleryPosts, onBack, o
     }
   };
 
-  useEffect(() => {
-    if (videoRef.current) {
-      if (isPlaying) {
-        videoRef.current.currentTime = 0;
-        videoRef.current.play().catch(e => console.error("Play failed", e));
-      } else {
-        videoRef.current.pause();
-      }
-    }
-  }, [currentClipIndex, isPlaying]);
-
   const currentClip = clips[currentClipIndex];
   const currentPost = currentClip ? availablePosts.find(p => p.id === currentClip.sourcePostId) : null;
   const activeSelectedClip = clips.find(c => c.id === selectedClipId) || currentClip;
   const activeSelectedClipIndex = clips.findIndex(c => c.id === activeSelectedClip?.id);
+
+  useEffect(() => {
+    if (videoRef.current && currentPost?.videoUrl) {
+      if (isPlaying) {
+        videoRef.current.currentTime = 0;
+        const playPromise = videoRef.current.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(() => {
+            // Safely ignore autoplay restrictions or media source transitions
+          });
+        }
+      } else {
+        videoRef.current.pause();
+      }
+    }
+  }, [currentClipIndex, isPlaying, currentPost?.videoUrl]);
 
   const updateSelectedClip = (updates: Partial<StoryboardClip>) => {
     if (!activeSelectedClip) return;

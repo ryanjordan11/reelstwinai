@@ -1,7 +1,12 @@
 /**
  * @license
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: MIT
+ * 
+ * Reels Creator Studio
+ * Voice-native • Local-first • Open-source • Bring any model
+ * Made by Ryan Jordan • Inspired by Seth Anderson
 */
+
 import { AnimatePresence, motion } from 'framer-motion';
 import React, { useCallback, useEffect, useState } from 'react';
 import ApiKeyDialog from './components/ApiKeyDialog';
@@ -11,18 +16,19 @@ import SingleFeed from './components/SingleFeed';
 import Sidebar from './components/Sidebar';
 import LandingPage from './components/LandingPage';
 import SettingsDialog from './components/SettingsDialog';
-import CoursePage from './components/CoursePage';
 import ScriptCreator from './components/ScriptCreator';
 import GalleryPage from './components/GalleryPage';
 import TrendingPage from './components/TrendingPage';
 import VideoAnalyzer from './components/VideoAnalyzer';
-import VoiceControl from './components/VoiceControl';
 import StoryboardPage from './components/StoryboardPage';
 import ProfilePage from './components/ProfilePage';
 import CoverCreator from './components/CoverCreator';
 import AvatarCreator from './components/AvatarCreator';
-import ComposerCanvas from './components/ComposerCanvas';
+import ComposerPage from './components/ComposerPage';
+import ActivityInspector from './components/ActivityInspector';
+import DevHubModal from './components/DevHubModal';
 import { generateVideo } from './services/geminiService';
+import { localDB } from './services/db';
 import { AppView, FeedMode, FeedPost, GenerateVideoParams, PostStatus, UserSettings } from './types';
 import { 
   Settings, 
@@ -31,7 +37,9 @@ import {
   ArrowLeft, 
   Menu, 
   Sparkles,
-  Smartphone
+  Smartphone,
+  PanelLeftClose,
+  PanelLeftOpen
 } from 'lucide-react';
 
 // Type definition for the AI Studio injection
@@ -46,11 +54,11 @@ declare global {
   }
 }
 
-// Sample video URLs for the feed (public domain/creative commons from Mixkit for demo reliability)
+// Sample video URLs for the feed with reliable CORS-enabled streams
 const sampleVideos: FeedPost[] = [
   {
     id: 's1',
-    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-girl-in-neon-sign-1232-large.mp4',
+    videoUrl: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
     username: 'alisa_fortin',
     avatarUrl: 'https://api.dicebear.com/9.x/fun-emoji/svg?seed=Maria',
     description: 'Sipping coffee at a cyberpunk cafe with holographic rain',
@@ -63,7 +71,7 @@ const sampleVideos: FeedPost[] = [
   },
   {
     id: 's2',
-    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-dog-catching-a-ball-1225-large.mp4',
+    videoUrl: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
     username: 'osanseviero',
     avatarUrl: 'https://api.dicebear.com/9.x/fun-emoji/svg?seed=Emery',
     description: 'Playful golden retriever catching a glowing neon disc at sunset',
@@ -76,7 +84,7 @@ const sampleVideos: FeedPost[] = [
   },
   {
     id: 's3',
-    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-hands-holding-a-smart-phone-with-a-green-screen-1153-large.mp4',
+    videoUrl: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
     username: 'ammaar',
     avatarUrl: 'https://api.dicebear.com/9.x/fun-emoji/svg?seed=Kimberly',
     description: 'Futuristic AI hologram smartphone interface hovering over hands',
@@ -89,7 +97,7 @@ const sampleVideos: FeedPost[] = [
   },
   {
     id: 's4',
-    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-aerial-view-of-a-beautiful-forest-1186-large.mp4',
+    videoUrl: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyBlazes.mp4',
     username: 'OfficialLoganK',
     avatarUrl: 'https://api.dicebear.com/9.x/fun-emoji/svg?seed=Jocelyn',
     description: 'FPV drone dive through misty mountain pine forests at sunrise',
@@ -102,7 +110,7 @@ const sampleVideos: FeedPost[] = [
   },
   {
     id: 's5',
-    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-tree-branches-in-the-breeze-1188-large.mp4',
+    videoUrl: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4',
     username: 'kat_kampf',
     avatarUrl: 'https://api.dicebear.com/9.x/fun-emoji/svg?seed=Jameson',
     description: 'Ancient mystical bamboo temple garden swaying in gentle wind',
@@ -115,7 +123,7 @@ const sampleVideos: FeedPost[] = [
   },
   {
     id: 's6',
-    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-concert-lights-2276-large.mp4',
+    videoUrl: 'https://storage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4',
     username: 'joshwoodward',
     avatarUrl: 'https://api.dicebear.com/9.x/fun-emoji/svg?seed=Jade',
     description: 'Epic stadium EDM concert with lasers, pyro, and massive crowd energy',
@@ -148,15 +156,19 @@ const App: React.FC = () => {
   const [feed, setFeed] = useState<FeedPost[]>(getInitialFeed);
   const [showApiKeyDialog, setShowApiKeyDialog] = useState(false);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
-  const [showLandingPage, setShowLandingPage] = useState(true);
+  const [showInspector, setShowInspector] = useState(false);
+  const [showDevHub, setShowDevHub] = useState(false);
+  const [showLandingPage, setShowLandingPage] = useState(false);
   const [errorToast, setErrorToast] = useState<string | null>(null);
-  const [currentView, setCurrentView] = useState<AppView>(AppView.FEED);
+  const [currentView, setCurrentView] = useState<AppView>(AppView.COMPOSER);
   
   // Feed Display Mode: 'grid' (multi-column) or 'single' (TikTok-style vertical reel)
   const [feedMode, setFeedMode] = useState<FeedMode>('grid');
 
   // Sidebar collapsed / mobile drawer states
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    return localStorage.getItem('reelsCreatorSidebarCollapsed') === 'true';
+  });
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   
   // Prompt state management to allow Trending / SingleFeed to set it
@@ -164,6 +176,27 @@ const App: React.FC = () => {
   
   // User Profile Settings
   const [userSettings, setUserSettings] = useState<UserSettings | null>(null);
+
+  // Toggle and persist sidebar collapsed state
+  const handleToggleSidebar = useCallback(() => {
+    setIsSidebarCollapsed(prev => {
+      const next = !prev;
+      localStorage.setItem('reelsCreatorSidebarCollapsed', String(next));
+      return next;
+    });
+  }, []);
+
+  // Keyboard shortcut (Ctrl+B / Cmd+B) for toggling sidebar
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
+        e.preventDefault();
+        handleToggleSidebar();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleToggleSidebar]);
 
   // Load settings on mount
   useEffect(() => {
@@ -203,6 +236,9 @@ const App: React.FC = () => {
   }, [errorToast]);
 
   const saveUserPost = (post: FeedPost) => {
+     // Persist in IndexedDB
+     localDB.savePost(post).catch(console.warn);
+
      const savedPostsStr = localStorage.getItem('reelsCreatorUserPosts');
      let savedPosts: FeedPost[] = [];
      if (savedPostsStr) {
@@ -220,27 +256,7 @@ const App: React.FC = () => {
      try {
          localStorage.setItem('reelsCreatorUserPosts', JSON.stringify(savedPosts.slice(0, 10)));
      } catch (err: any) {
-         console.warn("Storage quota exceeded, stripping heavy base64 assets...", err);
-         try {
-             localStorage.setItem('reelsCreatorUserPosts', JSON.stringify(savedPosts.slice(0, 5)));
-         } catch (err2) {
-             try {
-                 const skimmedPosts = savedPosts.slice(0, 8).map((p, idx) => {
-                     if (idx > 0) {
-                         return {
-                             ...p,
-                             videoUrl: p.videoUrl?.startsWith('data:') ? '' : p.videoUrl,
-                             referenceImageBase64: ''
-                         };
-                     }
-                     return p;
-                 });
-                 localStorage.setItem('reelsCreatorUserPosts', JSON.stringify(skimmedPosts));
-             } catch (err3) {
-                 console.error("Storage full. Using in-memory mode for this session.", err3);
-                 setErrorToast("Storage quota reached! Content will be stored in-memory for this session.");
-             }
-         }
+         console.warn("Storage quota exceeded in localStorage, IndexedDB retains full asset.", err);
      }
   };
 
@@ -333,8 +349,9 @@ const App: React.FC = () => {
 
   const handleGenerate = useCallback(async (params: GenerateVideoParams) => {
     const hasCustomKey = userSettings?.apiKey && userSettings.apiKey.trim().length > 0;
+    const isOllama = userSettings?.apiProvider === 'ollama';
 
-    if (!hasCustomKey && window.aistudio) {
+    if (!hasCustomKey && !isOllama && window.aistudio) {
       try {
         if (!(await window.aistudio.hasSelectedApiKey())) {
           setShowApiKeyDialog(true);
@@ -348,8 +365,9 @@ const App: React.FC = () => {
     
     setForcedPrompt(undefined);
 
-    if (currentView === AppView.COURSE || currentView === AppView.SCRIPTS || currentView === AppView.TRENDING || currentView === AppView.ANALYZE) {
-        setCurrentView(AppView.GALLERY);
+    // If generating from other tool pages, navigate to COMPOSER to see the stream
+    if (currentView === AppView.SCRIPTS || currentView === AppView.TRENDING || currentView === AppView.ANALYZE) {
+        setCurrentView(AppView.COMPOSER);
     }
 
     const newPostId = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
@@ -390,10 +408,6 @@ const App: React.FC = () => {
     setForcedPrompt(prompt);
     setCurrentView(AppView.COMPOSER);
   };
-  
-  const handleVoiceNavigate = (view: AppView) => {
-      setCurrentView(view);
-  };
 
   const handleDeletePost = (postId: string) => {
     setFeed(prevFeed => {
@@ -417,7 +431,7 @@ const App: React.FC = () => {
   const getViewTitle = () => {
     switch (currentView) {
       case AppView.COMPOSER:
-        return 'Canvas Composer Studio';
+        return 'AI Studio Composer';
       case AppView.AVATAR_CREATOR:
         return 'Real Self & AI Avatar Studio';
       case AppView.EDITOR:
@@ -432,8 +446,6 @@ const App: React.FC = () => {
         return 'Viral Script & Hook AI';
       case AppView.ANALYZE:
         return 'Video Prompt Analyzer';
-      case AppView.COURSE:
-        return 'AI Masterclass & Lessons';
       case AppView.PROFILE:
         return 'Creator Profile & Uploads';
       case AppView.FEED:
@@ -446,57 +458,56 @@ const App: React.FC = () => {
       switch(currentView) {
           case AppView.COMPOSER:
               return (
-                <ComposerCanvas 
+                <ComposerPage 
                   userSettings={userSettings}
                   onGenerate={handleGenerate}
-                  latestPost={feed.find(p => p.isUserGenerated && p.status === PostStatus.SUCCESS) || feed[0]}
-                  onSendToEditor={() => setCurrentView(AppView.EDITOR)}
+                  forcedPrompt={forcedPrompt}
                   onOpenAvatarStudio={() => setCurrentView(AppView.AVATAR_CREATOR)}
+                  onOpenFeed={() => setCurrentView(AppView.FEED)}
+                  posts={feed}
+                  onOpenEditor={() => setCurrentView(AppView.EDITOR)}
                 />
               );
-          case AppView.GALLERY:
-              return <GalleryPage posts={feed} onDeletePost={handleDeletePost} />;
-          case AppView.SCRIPTS:
-              return <ScriptCreator onBack={() => setCurrentView(AppView.FEED)} />;
-          case AppView.COURSE:
-              return <CoursePage />;
-          case AppView.TRENDING:
-              return <TrendingPage userSettings={userSettings} onRemixTrend={handleRemixTrend} />;
-          case AppView.ANALYZE:
-              return <VideoAnalyzer onBack={() => setCurrentView(AppView.FEED)} />;
-          case AppView.EDITOR:
-              return <StoryboardPage galleryPosts={feed} onBack={() => setCurrentView(AppView.FEED)} onDeletePost={handleDeletePost} />;
-          case AppView.PROFILE:
-              return (
-                <ProfilePage 
-                  userSettings={userSettings} 
-                  posts={feed} 
-                  onUpload={handleManualUpload} 
-                  onEditProfile={() => setShowSettingsDialog(true)} 
-                  onDeletePost={handleDeletePost}
-                />
-              );
-          case AppView.COVER_CREATOR:
-              return <CoverCreator onBack={() => setCurrentView(AppView.FEED)} />;
           case AppView.AVATAR_CREATOR:
               return (
                 <AvatarCreator 
                   userSettings={userSettings}
                   onBack={() => setCurrentView(AppView.FEED)}
-                  onSelectAvatarForReel={(avatar) => {
-                    if (userSettings) {
-                      const updatedSettings: UserSettings = {
-                        ...userSettings,
-                        activeAvatarId: avatar.id,
-                        avatarBase64: avatar.avatarBase64
-                      };
-                      handleSaveSettings(updatedSettings);
-                    }
-                    setCurrentView(AppView.COMPOSER);
-                  }}
-                  onUpdateUserSettings={(newSettings) => {
-                    handleSaveSettings(newSettings);
-                  }}
+                  onSelectAvatarForReel={() => setCurrentView(AppView.COMPOSER)}
+                  onUpdateUserSettings={handleSaveSettings}
+                />
+              );
+          case AppView.EDITOR:
+              return (
+                <StoryboardPage 
+                  galleryPosts={feed}
+                  onBack={() => setCurrentView(AppView.FEED)}
+                  onDeletePost={handleDeletePost}
+                />
+              );
+          case AppView.TRENDING:
+              return (
+                <TrendingPage 
+                  userSettings={userSettings} 
+                  onRemixTrend={handleRemixTrend} 
+                />
+              );
+          case AppView.COVER_CREATOR:
+              return <CoverCreator onBack={() => setCurrentView(AppView.FEED)} />;
+          case AppView.GALLERY:
+              return <GalleryPage posts={feed} onDeletePost={handleDeletePost} />;
+          case AppView.SCRIPTS:
+              return <ScriptCreator onBack={() => setCurrentView(AppView.FEED)} />;
+          case AppView.ANALYZE:
+              return <VideoAnalyzer onBack={() => setCurrentView(AppView.FEED)} />;
+          case AppView.PROFILE:
+              return (
+                <ProfilePage 
+                  userSettings={userSettings} 
+                  posts={feed} 
+                  onEditProfile={() => setShowSettingsDialog(true)} 
+                  onUpload={handleManualUpload}
+                  onDeletePost={handleDeletePost}
                 />
               );
           case AppView.FEED:
@@ -504,9 +515,9 @@ const App: React.FC = () => {
               if (feedMode === 'single') {
                 return (
                   <SingleFeed 
-                    posts={feed}
-                    onLike={handleLike}
-                    onComment={handleComment}
+                    posts={feed} 
+                    onLike={handleLike} 
+                    onComment={handleComment} 
                     onRemixPrompt={handleRemixTrend}
                     onDeletePost={handleDeletePost}
                     onOpenAvatarStudio={() => setCurrentView(AppView.AVATAR_CREATOR)}
@@ -515,38 +526,53 @@ const App: React.FC = () => {
               }
 
               return (
-                <div className="w-full max-w-[1600px] mx-auto p-4 md:p-6 pb-48 relative z-10">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
-                        <AnimatePresence initial={false}>
-                        {feed.map((post) => (
-                            <VideoCard 
-                              key={post.id} 
-                              post={post} 
-                              onLike={handleLike} 
-                              onComment={handleComment} 
-                              onDelete={post.isUserGenerated ? handleDeletePost : undefined}
-                            />
-                        ))}
-                        </AnimatePresence>
-                    </div>
+                <div className="p-4 sm:p-6 max-w-7xl mx-auto w-full">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-28">
+                    {feed.map((post) => (
+                      <VideoCard
+                        key={post.id}
+                        post={post}
+                        onLike={() => handleLike(post.id)}
+                        onComment={(id, text) => handleComment(id, text)}
+                        onDelete={post.isUserGenerated ? () => handleDeletePost(post.id) : undefined}
+                      />
+                    ))}
+                  </div>
                 </div>
               );
       }
   };
 
   return (
-    <div className="h-screen w-screen bg-black text-white flex overflow-hidden font-sans selection:bg-purple-500/30 selection:text-white">
+    <div className="flex h-screen w-screen overflow-hidden bg-black font-sans text-white antialiased selection:bg-purple-500 selection:text-white">
+      
+      {/* API Key Selection Dialog (Google Native) */}
       {showApiKeyDialog && (
-        <ApiKeyDialog onContinue={handleApiKeyDialogContinue} />
-      )}
-
-      {showSettingsDialog && (
-        <SettingsDialog 
-            currentSettings={userSettings} 
-            onSave={handleSaveSettings}
-            onClose={() => setShowSettingsDialog(false)}
+        <ApiKeyDialog
+          onContinue={handleApiKeyDialogContinue}
         />
       )}
+
+      {/* Settings Dialog (AI Providers, Ollama Localhost, Identity, Storage) */}
+      {showSettingsDialog && (
+        <SettingsDialog
+          currentSettings={userSettings}
+          onSave={handleSaveSettings}
+          onClose={() => setShowSettingsDialog(false)}
+        />
+      )}
+
+      {/* Local Activity Inspector (Zero Telemetry Verification) */}
+      <ActivityInspector
+        isOpen={showInspector}
+        onClose={() => setShowInspector(false)}
+      />
+
+      {/* Developer Hub (Architecture, Docker, Plugin Spec, MIT) */}
+      <DevHubModal
+        isOpen={showDevHub}
+        onClose={() => setShowDevHub(false)}
+      />
       
       {/* Error Toast */}
       <AnimatePresence>
@@ -563,20 +589,17 @@ const App: React.FC = () => {
             </motion.div>
         )}
       </AnimatePresence>
-      
-      {/* Voice Control Global Component - Hide on creation views */}
-      {![AppView.EDITOR, AppView.SCRIPTS, AppView.COVER_CREATOR, AppView.ANALYZE, AppView.AVATAR_CREATOR].includes(currentView) && (
-        <VoiceControl onNavigate={handleVoiceNavigate} />
-      )}
 
       {/* LEFT SIDEBAR NAVIGATION */}
       <Sidebar 
         currentView={currentView}
         onSelectView={(view) => setCurrentView(view)}
         onOpenSettings={() => setShowSettingsDialog(true)}
+        onOpenDevHub={() => setShowDevHub(true)}
+        onOpenInspector={() => setShowInspector(true)}
         userSettings={userSettings}
         isCollapsed={isSidebarCollapsed}
-        onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+        onToggleCollapse={handleToggleSidebar}
         isMobileOpen={isMobileSidebarOpen}
         onCloseMobile={() => setIsMobileSidebarOpen(false)}
       />
@@ -590,8 +613,22 @@ const App: React.FC = () => {
         {/* CLEAN, MINIMALIST TOP BAR */}
         <header className="sticky top-0 z-30 w-full px-4 md:px-6 py-3 border-b border-white/10 bg-black/85 backdrop-blur-xl flex items-center justify-between shrink-0">
           
-          {/* Left Title & Mobile Hamburger */}
+          {/* Left Title, Desktop Toggle & Mobile Hamburger */}
           <div className="flex items-center gap-3">
+            {/* Desktop Sidebar Toggle */}
+            <button
+              type="button"
+              onClick={handleToggleSidebar}
+              className="hidden lg:flex p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 hover:text-white transition-all items-center justify-center group"
+              title={isSidebarCollapsed ? "Expand Sidebar (Ctrl+B)" : "Collapse Sidebar (Ctrl+B)"}
+            >
+              {isSidebarCollapsed ? (
+                <PanelLeftOpen className="w-4 h-4 text-purple-400 group-hover:scale-105 transition-transform" />
+              ) : (
+                <PanelLeftClose className="w-4 h-4 text-white/70 group-hover:text-white transition-colors" />
+              )}
+            </button>
+
             {/* Mobile Hamburger Toggle */}
             <button
               onClick={() => setIsMobileSidebarOpen(true)}
@@ -624,8 +661,8 @@ const App: React.FC = () => {
             </div>
           </div>
 
-          {/* Center / Right: FEED MODE TOGGLE (Full Grid vs Single Reel TikTok) */}
-          <div className="flex items-center gap-3">
+          {/* Center / Right: FEED MODE TOGGLE & ACTION BUTTONS */}
+          <div className="flex items-center gap-2.5">
             {currentView === AppView.FEED && (
               <div className="flex items-center p-1 bg-neutral-900/90 border border-white/15 rounded-2xl shadow-inner">
                 <button
@@ -661,14 +698,14 @@ const App: React.FC = () => {
               </div>
             )}
 
-            {/* Quick Canvas Composer Shortcut on Feed */}
+            {/* Quick Composer Shortcut on Feed */}
             {currentView === AppView.FEED && (
               <button
                 onClick={() => setCurrentView(AppView.COMPOSER)}
-                className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-600/30 to-indigo-600/30 hover:from-purple-600/50 hover:to-indigo-600/50 border border-purple-400/40 rounded-xl text-xs font-bold text-purple-200 transition-all shadow-sm"
+                className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-amber-500/20 to-yellow-500/20 hover:from-amber-500/30 hover:to-yellow-500/30 border border-amber-400/40 rounded-xl text-xs font-bold text-amber-300 transition-all shadow-sm"
               >
-                <Sparkles className="w-3.5 h-3.5 text-purple-300" />
-                <span>Open Canvas</span>
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                <span>Create Video</span>
               </button>
             )}
 
@@ -689,7 +726,7 @@ const App: React.FC = () => {
               <button 
                 onClick={() => setShowSettingsDialog(true)}
                 className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-colors border border-white/10 text-white/80 hover:text-white group"
-                title="Settings (API Keys, Audio, Models)"
+                title="Settings (API Keys, Audio, Models, Storage)"
               >
                 <Settings className="w-4 h-4 group-hover:rotate-45 transition-transform" />
               </button>
@@ -699,13 +736,13 @@ const App: React.FC = () => {
 
         </header>
 
-        {/* Scrollable Viewport Content */}
+        {/* Viewport Content */}
         <main className="flex-1 h-full relative overflow-y-auto overflow-x-hidden no-scrollbar bg-black flex flex-col">
           {renderView()}
         </main>
 
-        {/* Show bottom prompt bar on GRID FEED view */}
-        {currentView === AppView.FEED && feedMode === 'grid' && (
+        {/* Primary Bottom Floating Composer Bar on Feed */}
+        {currentView === AppView.FEED && (
           <BottomPromptBar 
             onGenerate={handleGenerate} 
             userSettings={userSettings} 

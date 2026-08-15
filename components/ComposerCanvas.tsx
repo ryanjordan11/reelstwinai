@@ -43,6 +43,7 @@ interface ComposerCanvasProps {
   userSettings: UserSettings | null;
   onGenerate: (params: GenerateVideoParams) => void;
   latestPost?: FeedPost | null;
+  initialPrompt?: string;
   onSendToEditor: (post: FeedPost) => void;
   onOpenAvatarStudio: () => void;
 }
@@ -51,6 +52,7 @@ const ComposerCanvas: React.FC<ComposerCanvasProps> = ({
   userSettings,
   onGenerate,
   latestPost,
+  initialPrompt,
   onSendToEditor,
   onOpenAvatarStudio,
 }) => {
@@ -61,7 +63,9 @@ const ComposerCanvas: React.FC<ComposerCanvasProps> = ({
   const [resolution, setResolution] = useState<Resolution>(Resolution.P720);
 
   // Generation Prompt & Settings
-  const [prompt, setPrompt] = useState('Cinematic fashion model walking through neon-lit futuristic Tokyo at night with rainy reflections and volumetric glow');
+  const [prompt, setPrompt] = useState(
+    initialPrompt || 'Cinematic fashion model walking through neon-lit futuristic Tokyo at night with rainy reflections and volumetric glow'
+  );
   const [selectedModel, setSelectedModel] = useState<string>(userSettings?.customVideoModel || VeoModel.VEO_FAST);
   const [isEnhancingPrompt, setIsEnhancingPrompt] = useState(false);
 

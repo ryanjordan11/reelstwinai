@@ -123,22 +123,25 @@ export const SingleFeed: React.FC<SingleFeedProps> = ({
 
   // Video playback management
   useEffect(() => {
-    if (videoRef.current) {
+    if (videoRef.current && activePost?.videoUrl && activePost.status === PostStatus.SUCCESS) {
       videoRef.current.currentTime = 0;
       if (isPlaying) {
-        videoRef.current.play().catch(() => {
-          // Autoplay policy fallback: mute and retry
-          if (videoRef.current) {
-            videoRef.current.muted = true;
-            setIsMuted(true);
-            videoRef.current.play().catch((err) => console.error("Play blocked", err));
-          }
-        });
+        const playPromise = videoRef.current.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(() => {
+            // Autoplay policy fallback: mute and retry silently without throwing unhandled error
+            if (videoRef.current) {
+              videoRef.current.muted = true;
+              setIsMuted(true);
+              videoRef.current.play().catch(() => {});
+            }
+          });
+        }
       } else {
         videoRef.current.pause();
       }
     }
-  }, [currentIndex, isPlaying]);
+  }, [currentIndex, isPlaying, activePost?.videoUrl, activePost?.status]);
 
   // Sync mute state
   useEffect(() => {
@@ -365,7 +368,7 @@ export const SingleFeed: React.FC<SingleFeedProps> = ({
         </div>
 
         {/* RIGHT DOCK: TIKTOK FLOATING ACTION BUTTONS */}
-        <div className="absolute right-3 bottom-20 z-30 flex flex-col items-center gap-4.5 pointer-events-auto">
+        <div className="absolute right-2 sm:right-3 bottom-12 z-30 flex flex-col items-center gap-2 sm:gap-2.5 pointer-events-auto">
           
           {/* Creator Avatar with follow badge */}
           <div className="relative group">
@@ -374,7 +377,7 @@ export const SingleFeed: React.FC<SingleFeedProps> = ({
                 e.stopPropagation();
                 if (onOpenAvatarStudio) onOpenAvatarStudio();
               }}
-              className="w-11 h-11 rounded-full border-2 border-purple-400 overflow-hidden bg-neutral-900 shadow-xl cursor-pointer hover:scale-105 transition-transform"
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border-2 border-purple-400 overflow-hidden bg-neutral-900 shadow-xl cursor-pointer hover:scale-105 transition-transform"
             >
               <img src={activePost.avatarUrl} alt={activePost.username} className="w-full h-full object-cover" />
             </div>
@@ -383,8 +386,8 @@ export const SingleFeed: React.FC<SingleFeedProps> = ({
                 e.stopPropagation();
                 if (onOpenAvatarStudio) onOpenAvatarStudio();
               }}
-              className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-500 text-white flex items-center justify-center text-xs font-bold shadow-md hover:scale-110 transition-transform"
-              title="Cast / Avatar Studio"
+              className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-500 text-white flex items-center justify-center text-[10px] font-bold shadow-md hover:scale-110 transition-transform"
+              title="Avatar Studio"
             >
               +
             </button>
@@ -397,16 +400,16 @@ export const SingleFeed: React.FC<SingleFeedProps> = ({
                 e.stopPropagation();
                 handleLikeClick();
               }}
-              className={`w-11 h-11 rounded-full flex items-center justify-center backdrop-blur-md border transition-all ${
+              className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center backdrop-blur-xl border transition-all ${
                 activePost.hasLiked
-                  ? 'bg-rose-600/90 border-rose-400 text-white shadow-lg shadow-rose-600/30 scale-110'
-                  : 'bg-black/60 border-white/20 text-white hover:bg-black/80 hover:scale-105'
+                  ? 'bg-rose-600 border-rose-400 text-white shadow-lg shadow-rose-600/40 scale-105'
+                  : 'bg-black/70 border-white/20 text-white hover:bg-black/90 hover:scale-105'
               }`}
               title="Like this Reel"
             >
-              <Heart className={`w-5 h-5 ${activePost.hasLiked ? 'fill-white text-white' : 'text-white'}`} />
+              <Heart className={`w-4 h-4 sm:w-5 sm:h-5 ${activePost.hasLiked ? 'fill-white text-white' : 'text-white'}`} />
             </button>
-            <span className="text-[11px] font-bold text-white mt-1 drop-shadow-md font-mono">
+            <span className="text-[10px] sm:text-[11px] font-bold text-white mt-0.5 drop-shadow-md font-mono">
               {activePost.likes || 0}
             </span>
           </div>
@@ -418,12 +421,12 @@ export const SingleFeed: React.FC<SingleFeedProps> = ({
                 e.stopPropagation();
                 setShowComments(true);
               }}
-              className="w-11 h-11 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-md border border-white/20 text-white flex items-center justify-center transition-all hover:scale-105"
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-black/70 hover:bg-black/90 backdrop-blur-xl border border-white/20 text-white flex items-center justify-center transition-all hover:scale-105"
               title="Comments"
             >
-              <MessageCircle className="w-5 h-5 text-white" />
+              <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
             </button>
-            <span className="text-[11px] font-bold text-white mt-1 drop-shadow-md font-mono">
+            <span className="text-[10px] sm:text-[11px] font-bold text-white mt-0.5 drop-shadow-md font-mono">
               {activePost.comments?.length || 0}
             </span>
           </div>
@@ -435,10 +438,10 @@ export const SingleFeed: React.FC<SingleFeedProps> = ({
                 e.stopPropagation();
                 onRemixPrompt(activePost.prompt || activePost.description);
               }}
-              className="w-11 h-11 rounded-full bg-gradient-to-tr from-amber-500 to-purple-600 border border-amber-300/50 text-white flex items-center justify-center transition-all shadow-lg hover:scale-110"
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gradient-to-tr from-amber-500 to-purple-600 border border-amber-300/50 text-white flex items-center justify-center transition-all shadow-lg hover:scale-105"
               title="Remix & Edit Prompt in Composer"
             >
-              <Wand2 className="w-5 h-5" />
+              <Wand2 className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
           )}
 
@@ -449,10 +452,10 @@ export const SingleFeed: React.FC<SingleFeedProps> = ({
                 e.stopPropagation();
                 setShowShareMenu(!showShareMenu);
               }}
-              className="w-11 h-11 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-md border border-white/20 text-white flex items-center justify-center transition-all hover:scale-105"
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-black/70 hover:bg-black/90 backdrop-blur-xl border border-white/20 text-white flex items-center justify-center transition-all hover:scale-105"
               title="Share Reel"
             >
-              <Share2 className="w-5 h-5 text-white" />
+              <Share2 className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
             </button>
 
             {/* Share dropdown popup */}
@@ -462,7 +465,7 @@ export const SingleFeed: React.FC<SingleFeedProps> = ({
                   initial={{ opacity: 0, x: 10, scale: 0.9 }}
                   animate={{ opacity: 1, x: 0, scale: 1 }}
                   exit={{ opacity: 0, x: 10, scale: 0.9 }}
-                  className="absolute right-14 bottom-0 bg-neutral-900/95 backdrop-blur-xl border border-white/20 rounded-2xl p-2 shadow-2xl z-40 w-44 space-y-1"
+                  className="absolute right-12 sm:right-14 bottom-0 bg-neutral-900/95 backdrop-blur-xl border border-white/20 rounded-2xl p-2 shadow-2xl z-40 w-44 space-y-1"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <button
@@ -494,7 +497,7 @@ export const SingleFeed: React.FC<SingleFeedProps> = ({
                   if (currentIndex > 0) setCurrentIndex(currentIndex - 1);
                 }
               }}
-              className="w-10 h-10 rounded-full bg-red-950/70 hover:bg-red-800 backdrop-blur-md border border-red-500/40 text-red-200 flex items-center justify-center transition-all hover:scale-105"
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-red-950/80 hover:bg-red-800 backdrop-blur-xl border border-red-500/50 text-red-200 flex items-center justify-center transition-all hover:scale-105"
               title="Delete Video"
             >
               <Trash2 className="w-4 h-4" />
@@ -502,8 +505,8 @@ export const SingleFeed: React.FC<SingleFeedProps> = ({
           )}
 
           {/* Spinning Audio Disc Vinyl Animation */}
-          <div className="w-10 h-10 rounded-full bg-black/80 border-2 border-white/30 flex items-center justify-center shadow-2xl animate-[spin_5s_linear_infinite]">
-            <div className="w-4 h-4 rounded-full bg-purple-500 border border-white/50" />
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-black/90 border-2 border-white/30 flex items-center justify-center shadow-2xl animate-[spin_5s_linear_infinite]">
+            <div className="w-3 h-3 rounded-full bg-purple-500 border border-white/50" />
           </div>
         </div>
 
@@ -630,24 +633,32 @@ export const SingleFeed: React.FC<SingleFeedProps> = ({
 
       </div>
 
-      {/* FLOATING DESKTOP UP / DOWN NAVIGATION CONTROLS */}
-      <div className="hidden lg:flex flex-col gap-3 ml-4">
+      {/* FLOATING DESKTOP UP / DOWN NAVIGATION STATION */}
+      <div className="hidden md:flex flex-col items-center gap-2.5 ml-3 lg:ml-5 shrink-0 z-30">
         <button
           onClick={goToPrev}
           disabled={currentIndex === 0}
-          className="p-3 rounded-full bg-neutral-900/90 hover:bg-neutral-800 disabled:opacity-30 border border-white/15 text-white shadow-xl hover:scale-110 transition-all"
-          title="Previous Reel (Up Arrow)"
+          className="w-11 h-11 rounded-2xl bg-neutral-900/90 hover:bg-neutral-800 disabled:opacity-25 border border-white/20 text-white shadow-2xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
+          title="Previous Reel (Up Arrow / K)"
         >
           <ChevronUp className="w-5 h-5" />
         </button>
+
+        <div className="flex flex-col items-center py-1.5 px-2 rounded-xl bg-black/80 border border-white/10 shadow-lg text-center select-none min-w-[44px]">
+          <span className="text-[11px] font-mono font-bold text-white">{currentIndex + 1}</span>
+          <span className="text-[8px] font-mono text-white/40 uppercase">of {posts.length}</span>
+        </div>
+
         <button
           onClick={goToNext}
           disabled={currentIndex >= posts.length - 1}
-          className="p-3 rounded-full bg-neutral-900/90 hover:bg-neutral-800 disabled:opacity-30 border border-white/15 text-white shadow-xl hover:scale-110 transition-all"
-          title="Next Reel (Down Arrow)"
+          className="w-11 h-11 rounded-2xl bg-neutral-900/90 hover:bg-neutral-800 disabled:opacity-25 border border-white/20 text-white shadow-2xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
+          title="Next Reel (Down Arrow / J)"
         >
           <ChevronDown className="w-5 h-5" />
         </button>
+
+        <span className="text-[9px] font-mono text-white/30 tracking-wider">↑ / ↓</span>
       </div>
 
     </div>

@@ -1,24 +1,29 @@
 /**
  * @license
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: MIT
+ * 
+ * Reels Creator - Landing Page
+ * Voice-native. Local-first. Open-source. Bring any model.
+ * Your keys. Your models. Your media. Your machine.
+ * Made by Ryan Jordan • Inspired by Seth Anderson
 */
-import { motion, AnimatePresence } from 'framer-motion';
-import React, { useState } from 'react';
+
+import { motion } from 'framer-motion';
+import React from 'react';
 import { 
   Clapperboard, 
   Sparkles, 
   ChevronDown, 
-  PlayCircle, 
   Video, 
   PenTool, 
   Scan, 
   Scissors, 
-  Wand2,
-  ArrowRight,
-  Zap,
-  Flame
+  Wand2, 
+  ArrowRight, 
+  Zap, 
+  Flame, 
+  Terminal 
 } from 'lucide-react';
-import MiniCourse from './MiniCourse';
 
 interface LandingPageProps {
   onEnter: () => void;
@@ -37,19 +42,19 @@ interface FeatureItem {
 
 const FEATURES: FeatureItem[] = [
   {
-    title: "Google Veo 3.1 Generation",
+    title: "Google Veo 3.1 & Open Video",
     subtitle: "Text & Image-to-Video Engine",
-    desc: "Transform short natural language prompts into fluid, photorealistic 1080p video reels with natural physics and lighting.",
-    badge: "Next-Gen AI",
+    desc: "Transform short natural language prompts into fluid, cinematic 1080p video reels with realistic camera motion and lighting.",
+    badge: "Next-Gen Video",
     icon: Video,
     color: "from-purple-500 to-indigo-600",
     gradientBg: "group-hover:border-purple-500/40",
     colSpan: "md:col-span-2"
   },
   {
-    title: "AI Avatar & Twin Studio",
+    title: "AI Avatar & Digital Twin Studio",
     subtitle: "Character Continuity",
-    desc: "Generate and store consistent digital twins or realistic AI actors to star across all your reels and brand campaigns.",
+    desc: "Generate and store consistent digital twins and actors locally to star across all your reels and brand campaigns.",
     badge: "Digital Actors",
     icon: Wand2,
     color: "from-pink-500 to-rose-600",
@@ -69,7 +74,7 @@ const FEATURES: FeatureItem[] = [
   {
     title: "Viral Script & Hook AI",
     subtitle: "Engineered for Retention",
-    desc: "Synthesize high-velocity 3-second hooks, value stacks, and retention-maximizing script formulas backed by viewer psychology.",
+    desc: "Synthesize high-velocity 3-second hooks, value stacks, and retention formulas backed by viewer psychology.",
     badge: "Hook Engine",
     icon: PenTool,
     color: "from-amber-500 to-orange-500",
@@ -87,13 +92,13 @@ const FEATURES: FeatureItem[] = [
     colSpan: "md:col-span-1"
   },
   {
-    title: "Interactive Canvas Composer",
-    subtitle: "Studio Control Room",
-    desc: "Direct your scenes with camera presets, lighting modifiers, prompt enhancement, aspect ratio switching, and instant previews.",
-    badge: "Live Canvas",
-    icon: Sparkles,
-    color: "from-purple-500 to-pink-500",
-    gradientBg: "group-hover:border-purple-500/40",
+    title: "100% Local-First & Zero Telemetry",
+    subtitle: "IndexedDB & Audit Inspector",
+    desc: "Your prompts, media, and keys never leave your machine without your permission. Zero tracking pixels, zero hidden analytics.",
+    badge: "Privacy Guarantee",
+    icon: Terminal,
+    color: "from-emerald-500 to-cyan-500",
+    gradientBg: "group-hover:border-emerald-500/40",
     colSpan: "md:col-span-2"
   }
 ];
@@ -123,7 +128,7 @@ const SAMPLE_SHOWCASES = [
     tag: "Veo Fast",
     views: "1.4M",
     likes: "124K",
-    video: "https://assets.mixkit.co/videos/preview/mixkit-girl-in-neon-sign-1232-large.mp4"
+    video: "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
   },
   {
     title: "Golden Hour Glow",
@@ -131,7 +136,7 @@ const SAMPLE_SHOWCASES = [
     tag: "Veo 3.1",
     views: "890K",
     likes: "89K",
-    video: "https://assets.mixkit.co/videos/preview/mixkit-dog-catching-a-ball-1225-large.mp4"
+    video: "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4"
   },
   {
     title: "Holographic Phone",
@@ -139,19 +144,13 @@ const SAMPLE_SHOWCASES = [
     tag: "Veo Studio",
     views: "3.2M",
     likes: "450K",
-    video: "https://assets.mixkit.co/videos/preview/mixkit-hands-holding-a-smart-phone-with-a-green-screen-1153-large.mp4"
+    video: "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4"
   }
 ];
 
 const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
-  const [showDemo, setShowDemo] = useState(false);
-
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black text-white font-sans scroll-smooth no-scrollbar">
-      <AnimatePresence>
-        {showDemo && <MiniCourse onClose={() => setShowDemo(false)} />}
-      </AnimatePresence>
-
       {/* TOP FLOATING NAVIGATION BAR */}
       <header className="sticky top-0 z-50 w-full px-6 py-4 bg-black/75 backdrop-blur-xl border-b border-white/10 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -159,24 +158,21 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
             <Clapperboard className="w-5 h-5 text-white" />
           </div>
           <div>
-            <span className="font-bogle text-lg font-bold tracking-wide text-white block leading-none">
-              REELS CREATOR
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="font-bogle text-lg font-bold tracking-wide text-white block leading-none">
+                REELS CREATOR
+              </span>
+              <span className="px-1.5 py-0.5 rounded text-[9px] font-mono bg-purple-500/20 text-purple-300 font-bold border border-purple-500/30">
+                MIT
+              </span>
+            </div>
             <span className="text-[9px] text-white/40 tracking-widest uppercase font-semibold">
-              AI Video Production Studio
+              Voice-Native • Local-First • Open-Source
             </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setShowDemo(true)}
-            className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl bg-white/[0.05] hover:bg-white/10 border border-white/10 text-xs font-semibold text-white/80 hover:text-white transition-all"
-          >
-            <PlayCircle className="w-3.5 h-3.5 text-purple-400" />
-            <span>Interactive Demo</span>
-          </button>
-
+        <div className="flex items-center gap-2.5">
           <button
             onClick={onEnter}
             className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-black hover:bg-neutral-200 text-xs font-bold transition-all shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:scale-105"
@@ -234,7 +230,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
           }}
           className="relative z-10 text-center flex flex-col items-center max-w-5xl mx-auto"
         >
-          {/* Eyebrow Chip */}
+          {/* Core Hierarchy Badge */}
           <motion.div
             variants={{
               hidden: { y: -15, opacity: 0 },
@@ -243,7 +239,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
             className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/25 text-purple-300 text-xs font-semibold uppercase tracking-wider mb-6 shadow-inner"
           >
             <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-            <span>AI Short-Form Video Production Suite</span>
+            <span>Voice-native • Local-first • Open-source • Bring any model</span>
           </motion.div>
 
           {/* Massive Display Title */}
@@ -256,6 +252,17 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
           >
             REELS<br/>CREATOR
           </motion.h1>
+
+          {/* Core Principle Proposition */}
+          <motion.div
+            variants={{
+              hidden: { opacity: 0, y: 10 },
+              visible: { opacity: 1, y: 0 }
+            }}
+            className="text-lg sm:text-2xl font-medium text-purple-200 tracking-wide mb-4 font-mono"
+          >
+            Your keys. Your models. Your media. Your machine.
+          </motion.div>
 
           {/* Credits Bar: Made by Ryan Jordan • Inspired by Seth Anderson */}
           <motion.div 
@@ -280,9 +287,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
               hidden: { opacity: 0, y: 10 },
               visible: { opacity: 1, y: 0 }
             }}
-            className="text-base sm:text-xl text-neutral-300 max-w-2xl mx-auto font-light leading-relaxed mb-10"
+            className="text-base sm:text-lg text-neutral-300 max-w-2xl mx-auto font-light leading-relaxed mb-10"
           >
-            From natural language prompt to viral, high-retention video reels in seconds. Powered by Veo, custom AI avatars, and multi-scene storyboard sequencing.
+            From natural language prompts to viral video reels in seconds. Complete client-side IndexedDB persistence, Ollama localhost support, portable project bundles, and direct Google Veo rendering.
           </motion.p>
 
           {/* Action CTAs */}
@@ -301,14 +308,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
               <span>START CREATING NOW</span>
               <Sparkles className="w-4 h-4 text-purple-600" />
             </button>
-
-            <button
-              onClick={() => setShowDemo(true)}
-              className="w-full sm:w-auto px-8 py-5 bg-white/[0.06] hover:bg-white/10 border border-white/15 text-white rounded-2xl font-semibold text-sm transition-all flex items-center justify-center gap-2.5 backdrop-blur-md"
-            >
-              <PlayCircle className="w-4 h-4 text-purple-300" />
-              <span>Interactive 3-Min Demo</span>
-            </button>
           </motion.div>
 
           {/* Tech Feature Badges */}
@@ -317,23 +316,23 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
               hidden: { opacity: 0 },
               visible: { opacity: 1 }
             }}
-            className="mt-14 flex flex-wrap justify-center gap-4 sm:gap-8 text-xs text-neutral-400 font-medium tracking-wider uppercase"
+            className="mt-14 flex flex-wrap justify-center gap-4 sm:gap-8 text-xs text-neutral-400 font-medium tracking-wider uppercase font-mono"
           >
             <span className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
-              Google Veo 3.1
+              Ollama & Localhost
             </span>
             <span className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-purple-400 animate-pulse delay-75"></div>
-              Avatar Digital Twins
+              Google Veo 3.1 Native
             </span>
             <span className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse delay-150"></div>
-              Multi-Scene Timeline
+              <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse delay-150"></div>
+              IndexedDB Storage
             </span>
             <span className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-pink-400 animate-pulse delay-200"></div>
-              TikTok & Grid Feed
+              Zero-Telemetry MIT
             </span>
           </motion.div>
         </motion.div>
@@ -429,7 +428,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
               Everything You Need to Dominate Short-Form
             </h2>
             <p className="text-neutral-400 max-w-2xl mx-auto text-base font-light">
-              A comprehensive studio designed for creators, marketers, and storytellers to produce viral video content at scale.
+              A comprehensive studio designed for creators, marketers, and developers to produce viral video content with open-source sovereignty.
             </p>
           </div>
 
@@ -532,8 +531,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
             Made by <span className="text-white font-semibold">Ryan Jordan</span> • Inspired by <span className="text-purple-300 font-semibold">Seth Anderson</span>
           </div>
 
-          <p className="text-[11px] text-neutral-600 max-w-md">
-            Built with cutting-edge Gemini and Veo video synthesis models for next-generation content creators.
+          <p className="text-[11px] text-neutral-500 max-w-md">
+            Voice-native • Local-first • Open-source • MIT Licensed • 0 Telemetry
           </p>
         </div>
       </footer>

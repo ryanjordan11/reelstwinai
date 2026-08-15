@@ -12,12 +12,14 @@
   "dependencies": {
     "@google/genai": "^1.22.0",
     "framer-motion": "^12.38.0",
+    "jszip": "^3.10.1",
     "lucide-react": "^0.469.0",
     "motion": "^12.38.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
   "devDependencies": {
+    "@types/jszip": "^3.4.1",
     "@types/node": "^22.14.0",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",

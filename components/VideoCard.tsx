@@ -29,9 +29,12 @@ const VideoCard: React.FC<VideoCardProps> = ({ post, onLike, onComment, onDelete
 
   const handleMouseEnter = () => {
     setIsHovered(true);
-    if (status === PostStatus.SUCCESS && !hasError && videoRef.current) {
+    if (status === PostStatus.SUCCESS && !hasError && videoRef.current && post.videoUrl) {
       videoRef.current.muted = false;
-      videoRef.current.play().catch(() => {}); // Handle autoplay block
+      const playPromise = videoRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {}); // Safely swallow autoplay block
+      }
     }
   };
 
